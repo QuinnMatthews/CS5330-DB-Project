@@ -1,95 +1,155 @@
+"use client"
 import Image from "next/image";
 import styles from "./page.module.css";
 
-export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+import { useEffect, useState } from 'react';
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
+import AddSocialModal from './AddSocialModal';
+
+
+export default function Home() {
+  const [socialData, setSocialData] = useState<any[]>([]);
+  const [socialsLoading, setSocialsLoading] = useState(true);
+  
+  const [userData, setUserData] = useState<any[]>([]);
+  const [userLoading, setUserLoading] = useState(true);
+  
+  const [showAddSocialModal, setShowAddSocialModal] = useState(false);
+
+  const openAddSocialModal = () => setShowAddSocialModal(true);
+  const closeAddSocialModal = () => {
+    setShowAddSocialModal(false);
+    // Trigger a re-fetch
+    fetchSocials();
+  };
+
+  // Fetch functions
+  const fetchSocials = () => {
+    fetch('/api/social')
+      .then((response) => response.json())
+      .then((data) => {
+        setSocialData(data);
+        setSocialsLoading(false);
+      });
+  };
+
+  const fetchUsers = () => {
+    fetch('/api/user')
+      .then((response) => response.json())
+      .then((data) => {
+        setUserData(data);
+        setUserLoading(false);
+      });
+  };
+
+  // Run once on mount
+  useEffect(() => {
+    fetchSocials();
+    fetchUsers();
+  }, []);
+
+  return (
+    <div>
+      {/* navbar */}
+      <nav className="navbar navbar-expand-lg bg-body-tertiary">
+        <div className="container-fluid">
+          <a className="navbar-brand" href="#">
+            Navbar
           </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
+          <button
+            className="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
           >
-            Read our docs
-          </a>
+            <span className="navbar-toggler-icon"></span>
+          </button>
+          <div className="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+              <li className="nav-item">
+                <a className="nav-link active" aria-current="page" href="#">
+                  Home
+                </a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link active" aria-current="page" href="#">
+                  Contact-us
+                </a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link active" aria-current="page" href="#">
+                  About Us
+                </a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link" href="#">
+                  Link
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </nav>
+      <h2 className="text-center text-bg-primary m-2 p-2">
+        Social Media Research Database
+      </h2>
+      <div className="container-fluid m-2 border border-success text-center">
+        <h4>Social Media Platforms</h4>{" "}
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">Platform</th>
+            </tr>
+          </thead>
+          <tbody>
+            {socialsLoading? (
+              <tr>
+                <td> Loading...</td>
+              </tr>
+            ) : (
+              socialData.map((social: any) => (
+                <tr key={social.name}>
+                  <td >{social.name}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+          </table>
+          <button className="btn btn-primary m-2" onClick={openAddSocialModal}>Add</button>
+      </div>
+      <div className="container-fluid m-2 border border-success text-center">
+        <h4>User Data</h4>{" "}
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th scope="col">Username</th>
+              <th scope="col">Social Platform</th>
+              <th scope="col">First Name</th>
+              <th scope="col">Last Name</th>
+              <th scope="col">Gender</th>
+            </tr>
+          </thead>
+          {userLoading ? (
+            <tr>
+              <td>Loading...</td>
+            </tr>
+          ) : (
+            userData.map((user: any) => (
+              <tr key={user.social_name + "." + user.username}>
+                <td>{user.username}</td>
+                <td>{user.social_name}</td>
+                <td>{user.first_name}</td>
+                <td>{user.last_name}</td>
+                <td>{user.gender}</td>
+              </tr>
+            ))
+          )}
+        </table>
+      </div>
+      <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
     </div>
   );
 }
