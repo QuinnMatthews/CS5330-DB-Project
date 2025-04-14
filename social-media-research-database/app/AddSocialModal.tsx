@@ -27,7 +27,7 @@ const AddSocialModal: React.FC<AddSocialModalProps> = ({ show, onClose }) => {
 
 
     try {
-      let response = await fetch("/api/social", {
+      let response = await fetch("/api/socials", {
         method: "POST",
         body: data,
       });

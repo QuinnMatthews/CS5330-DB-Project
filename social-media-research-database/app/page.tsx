@@ -25,7 +25,7 @@ export default function Home() {
 
   // Fetch functions
   const fetchSocials = () => {
-    fetch('/api/social')
+    fetch('/api/socials')
       .then((response) => response.json())
       .then((data) => {
         setSocialData(data);
@@ -34,7 +34,7 @@ export default function Home() {
   };
 
   const fetchUsers = () => {
-    fetch('/api/user')
+    fetch('/api/users')
       .then((response) => response.json())
       .then((data) => {
         setUserData(data);
