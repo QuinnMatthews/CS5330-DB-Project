@@ -5,7 +5,7 @@ import styles from "./page.module.css";
 import { useEffect, useState } from 'react';
 
 import AddSocialModal from './AddSocialModal';
-
+import AddUserModal from './AddUserModal';
 
 export default function Home() {
   const [socialData, setSocialData] = useState<any[]>([]);
@@ -21,6 +21,15 @@ export default function Home() {
     setShowAddSocialModal(false);
     // Trigger a re-fetch
     fetchSocials();
+  };
+  
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  
+  const openAddUserModal = () => setShowAddUserModal(true);
+  const closeAddUserModal = () => {
+    setShowAddUserModal(false);
+    // Trigger a re-fetch
+    fetchUsers();
   };
 
   // Fetch functions
@@ -50,7 +59,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* navbar */}
+      {/* Navbar */}
       <nav className="navbar navbar-expand-lg bg-body-tertiary">
         <div className="container-fluid">
           <a className="navbar-brand" href="#">
@@ -93,9 +102,13 @@ export default function Home() {
           </div>
         </div>
       </nav>
+      
+      {/* Header */}
       <h2 className="text-center text-bg-primary m-2 p-2">
         Social Media Research Database
       </h2>
+      
+      {/* Social Media Platforms */}
       <div className="container-fluid m-2 border border-success text-center">
         <h4>Social Media Platforms</h4>{" "}
         <table className="table table-striped">
@@ -120,6 +133,8 @@ export default function Home() {
           </table>
           <button className="btn btn-primary m-2" onClick={openAddSocialModal}>Add</button>
       </div>
+      
+      {/* User Data */}
       <div className="container-fluid m-2 border border-success text-center">
         <h4>User Data</h4>{" "}
         <table className="table table-striped">
@@ -129,9 +144,13 @@ export default function Home() {
               <th scope="col">Social Platform</th>
               <th scope="col">First Name</th>
               <th scope="col">Last Name</th>
+              <th scope="col">Birthdate</th>
               <th scope="col">Gender</th>
+              <th scope="col">Birth Country</th>
+              <th scope="col">Residence Country</th>
             </tr>
           </thead>
+          <tbody>
           {userLoading ? (
             <tr>
               <td>Loading...</td>
@@ -143,13 +162,21 @@ export default function Home() {
                 <td>{user.social_name}</td>
                 <td>{user.first_name}</td>
                 <td>{user.last_name}</td>
+                <td>{user.birthdate}</td>
                 <td>{user.gender}</td>
+                <td>{user.birth_country}</td>
+                <td>{user.residence_country}</td>
               </tr>
             ))
           )}
+          </tbody>
         </table>
+        <button className="btn btn-primary m-2" onClick={openAddUserModal}>Add</button>
       </div>
+      
+      {/* Modals */}
       <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
+      <AddUserModal show={showAddUserModal} onClose={closeAddUserModal} />
     </div>
   );
 }
