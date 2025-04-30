@@ -44,8 +44,6 @@ export async function POST(request: NextRequest) {
     const connection = await mysql.createConnection(connectionParams)
     const new_exp_query = `INSERT INTO user (username, social_name, first_name, last_name,
     birthdate, gender, birth_country, residence_country) VALUES (?,?,?,?,?,?,?,?)`;
-    
-    console.log(body)
 
     // Execute the query
     const result = await connection.execute(new_exp_query, [

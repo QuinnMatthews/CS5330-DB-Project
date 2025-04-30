@@ -11,8 +11,6 @@ export async function POST(request: NextRequest) {
     // Connect to the database
     const connection = await mysql.createConnection(connectionParams)
     const new_exp_query = "DELETE FROM user WHERE username = ? AND social_name = ?";
-    
-    console.log(body)
 
     // Execute the query
     const result = await connection.execute(new_exp_query, [body.username, body.social_name])
