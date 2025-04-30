@@ -4,8 +4,11 @@ import styles from "./page.module.css";
 
 import { useEffect, useState } from 'react';
 
-import AddSocialModal from './AddSocialModal';
+import AddSocialModal from './socials/AddSocialModal';
 
+import AddUserModal from './users/AddUserModal';
+import DeleteUserModal from './users/DeleteUserModal';
+import UpdateUserModal from './users/UpdateUserModal';
 
 export default function Home() {
   const [socialData, setSocialData] = useState<any[]>([]);
@@ -14,6 +17,8 @@ export default function Home() {
   const [userData, setUserData] = useState<any[]>([]);
   const [userLoading, setUserLoading] = useState(true);
   
+  // MARK: Social modals
+  
   const [showAddSocialModal, setShowAddSocialModal] = useState(false);
 
   const openAddSocialModal = () => setShowAddSocialModal(true);
@@ -21,6 +26,35 @@ export default function Home() {
     setShowAddSocialModal(false);
     // Trigger a re-fetch
     fetchSocials();
+  };
+  
+  // MARK: User modals
+  
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  
+  const openAddUserModal = () => setShowAddUserModal(true);
+  const closeAddUserModal = () => {
+    setShowAddUserModal(false);
+    // Trigger a re-fetch
+    fetchUsers();
+  };
+  
+  const [showUpdateUserModal, setShowUpdateUserModal] = useState(false);
+  
+  const openUpdateUserModal = () => setShowUpdateUserModal(true);
+  const closeUpdateUserModal = () => {
+    setShowUpdateUserModal(false);
+    // Trigger a re-fetch
+    fetchUsers();
+  };
+  
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+  
+  const openDeleteUserModal = () => setShowDeleteUserModal(true);
+  const closeDeleteUserModal = () => {
+    setShowDeleteUserModal(false);
+    // Trigger a re-fetch
+    fetchUsers();
   };
 
   // Fetch functions
@@ -50,7 +84,7 @@ export default function Home() {
 
   return (
     <div>
-      {/* navbar */}
+      {/* Navbar */}
       <nav className="navbar navbar-expand-lg bg-body-tertiary">
         <div className="container-fluid">
           <a className="navbar-brand" href="#">
@@ -76,7 +110,7 @@ export default function Home() {
               </li>
               <li className="nav-item">
                 <a className="nav-link active" aria-current="page" href="#">
-                  Contact-us
+                  Contact Us
                 </a>
               </li>
               <li className="nav-item">
@@ -93,9 +127,13 @@ export default function Home() {
           </div>
         </div>
       </nav>
+      
+      {/* Header */}
       <h2 className="text-center text-bg-primary m-2 p-2">
         Social Media Research Database
       </h2>
+      
+      {/* Social Media Platforms */}
       <div className="container-fluid m-2 border border-success text-center">
         <h4>Social Media Platforms</h4>{" "}
         <table className="table table-striped">
@@ -120,6 +158,8 @@ export default function Home() {
           </table>
           <button className="btn btn-primary m-2" onClick={openAddSocialModal}>Add</button>
       </div>
+      
+      {/* User Data */}
       <div className="container-fluid m-2 border border-success text-center">
         <h4>User Data</h4>{" "}
         <table className="table table-striped">
@@ -129,9 +169,13 @@ export default function Home() {
               <th scope="col">Social Platform</th>
               <th scope="col">First Name</th>
               <th scope="col">Last Name</th>
+              <th scope="col">Birthdate</th>
               <th scope="col">Gender</th>
+              <th scope="col">Birth Country</th>
+              <th scope="col">Residence Country</th>
             </tr>
           </thead>
+          <tbody>
           {userLoading ? (
             <tr>
               <td>Loading...</td>
@@ -143,13 +187,25 @@ export default function Home() {
                 <td>{user.social_name}</td>
                 <td>{user.first_name}</td>
                 <td>{user.last_name}</td>
+                <td>{user.birthdate}</td>
                 <td>{user.gender}</td>
+                <td>{user.birth_country}</td>
+                <td>{user.residence_country}</td>
               </tr>
             ))
           )}
+          </tbody>
         </table>
+        <button className="btn btn-primary m-2" onClick={openAddUserModal}>Add</button>
+        <button className="btn btn-secondary m-2" onClick={openUpdateUserModal}>Update</button>
+        <button className="btn btn-danger m-2" onClick={openDeleteUserModal}>Delete</button>
       </div>
+      
+      {/* Modals */}
       <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
+      <AddUserModal show={showAddUserModal} onClose={closeAddUserModal} />
+      <UpdateUserModal show={showUpdateUserModal} onClose={closeUpdateUserModal} />
+      <DeleteUserModal show={showDeleteUserModal} onClose={closeDeleteUserModal} />
     </div>
   );
 }

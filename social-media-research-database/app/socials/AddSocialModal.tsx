@@ -8,14 +8,14 @@ interface AddSocialModalProps {
 }
 
 const AddSocialModal: React.FC<AddSocialModalProps> = ({ show, onClose }) => {
-  if (!show) {
-    return null;
-  }
-
   useEffect(() => {
     // This is needed to load Bootstrap's JavaScript
     import("bootstrap/dist/js/bootstrap");
   }, []);
+  
+  if (!show) {
+    return null;
+  }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
