@@ -76,6 +76,9 @@ export default function Home() {
   const deleteSocial = async (social: any) => {
     const response = await fetch(`/api/socials`, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(social),
     });
     if (!response.ok) {
