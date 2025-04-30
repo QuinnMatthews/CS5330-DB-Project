@@ -61,10 +61,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const reqJson = await request.json();
-
-  const social_name = reqJson.name;
-  console.log(reqJson)
+  const body = await request.json();
+  const social_name = body.name;
 
   try {
     const connection = await mysql.createConnection(connectionParams)
