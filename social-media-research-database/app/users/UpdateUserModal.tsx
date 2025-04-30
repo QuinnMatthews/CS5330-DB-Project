@@ -27,8 +27,8 @@ const UpdateUserModal: React.FC<UpdateUserModalProps> = ({ show, onClose }) => {
 
 
     try {
-      let response = await fetch("/api/users/update", {
-        method: "POST",
+      let response = await fetch("/api/users", {
+        method: "PATCH",
         body: data,
       });
       // Check if the response is ok

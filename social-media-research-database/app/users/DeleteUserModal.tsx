@@ -27,8 +27,8 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ show, onClose }) => {
 
 
     try {
-      let response = await fetch("/api/users/delete", {
-        method: "POST",
+      let response = await fetch("/api/users", {
+        method: "DELETE",
         body: data,
       });
       // Check if the response is ok
