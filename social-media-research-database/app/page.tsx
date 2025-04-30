@@ -4,10 +4,11 @@ import styles from "./page.module.css";
 
 import { useEffect, useState } from 'react';
 
-import AddSocialModal from './AddSocialModal';
+import AddSocialModal from './socials/AddSocialModal';
 
-import AddUserModal from './AddUserModal';
-import DeleteUserModal from './DeleteUserModal';
+import AddUserModal from './users/AddUserModal';
+import DeleteUserModal from './users/DeleteUserModal';
+import UpdateUserModal from './users/UpdateUserModal';
 
 export default function Home() {
   const [socialData, setSocialData] = useState<any[]>([]);
@@ -15,6 +16,8 @@ export default function Home() {
   
   const [userData, setUserData] = useState<any[]>([]);
   const [userLoading, setUserLoading] = useState(true);
+  
+  // MARK: Social modals
   
   const [showAddSocialModal, setShowAddSocialModal] = useState(false);
 
@@ -25,11 +28,22 @@ export default function Home() {
     fetchSocials();
   };
   
+  // MARK: User modals
+  
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   
   const openAddUserModal = () => setShowAddUserModal(true);
   const closeAddUserModal = () => {
     setShowAddUserModal(false);
+    // Trigger a re-fetch
+    fetchUsers();
+  };
+  
+  const [showUpdateUserModal, setShowUpdateUserModal] = useState(false);
+  
+  const openUpdateUserModal = () => setShowUpdateUserModal(true);
+  const closeUpdateUserModal = () => {
+    setShowUpdateUserModal(false);
     // Trigger a re-fetch
     fetchUsers();
   };
@@ -183,12 +197,14 @@ export default function Home() {
           </tbody>
         </table>
         <button className="btn btn-primary m-2" onClick={openAddUserModal}>Add</button>
+        <button className="btn btn-secondary m-2" onClick={openUpdateUserModal}>Update</button>
         <button className="btn btn-danger m-2" onClick={openDeleteUserModal}>Delete</button>
       </div>
       
       {/* Modals */}
       <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
       <AddUserModal show={showAddUserModal} onClose={closeAddUserModal} />
+      <UpdateUserModal show={showUpdateUserModal} onClose={closeUpdateUserModal} />
       <DeleteUserModal show={showDeleteUserModal} onClose={closeDeleteUserModal} />
     </div>
   );
