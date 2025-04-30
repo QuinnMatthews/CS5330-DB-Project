@@ -5,7 +5,9 @@ import styles from "./page.module.css";
 import { useEffect, useState } from 'react';
 
 import AddSocialModal from './AddSocialModal';
+
 import AddUserModal from './AddUserModal';
+import DeleteUserModal from './DeleteUserModal';
 
 export default function Home() {
   const [socialData, setSocialData] = useState<any[]>([]);
@@ -28,6 +30,15 @@ export default function Home() {
   const openAddUserModal = () => setShowAddUserModal(true);
   const closeAddUserModal = () => {
     setShowAddUserModal(false);
+    // Trigger a re-fetch
+    fetchUsers();
+  };
+  
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+  
+  const openDeleteUserModal = () => setShowDeleteUserModal(true);
+  const closeDeleteUserModal = () => {
+    setShowDeleteUserModal(false);
     // Trigger a re-fetch
     fetchUsers();
   };
@@ -85,7 +96,7 @@ export default function Home() {
               </li>
               <li className="nav-item">
                 <a className="nav-link active" aria-current="page" href="#">
-                  Contact-us
+                  Contact Us
                 </a>
               </li>
               <li className="nav-item">
@@ -172,11 +183,13 @@ export default function Home() {
           </tbody>
         </table>
         <button className="btn btn-primary m-2" onClick={openAddUserModal}>Add</button>
+        <button className="btn btn-danger m-2" onClick={openDeleteUserModal}>Delete</button>
       </div>
       
       {/* Modals */}
       <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
       <AddUserModal show={showAddUserModal} onClose={closeAddUserModal} />
+      <DeleteUserModal show={showDeleteUserModal} onClose={closeDeleteUserModal} />
     </div>
   );
 }
