@@ -66,20 +66,22 @@ export async function DELETE(request: NextRequest) {
   const social_name = reqJson.name;
   console.log(reqJson)
 
+  let connection;
   try {
-    const connection = await mysql.createConnection(connectionParams)
+    connection = await mysql.createConnection(connectionParams)
     const delete_exp_query = 'DELETE FROM social WHERE name = ?'
     const result = await connection.execute(delete_exp_query, [social_name])
-    connection.end()
-
     return NextResponse.json(result)
   } catch (err) {
     console.log('ERROR: API - ', (err as Error).message)
-
     const response = {
       error: (err as Error).message,
       returnedStatus: 500,
     }
     return NextResponse.json(response, { status: 500 })
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
   }
 }
