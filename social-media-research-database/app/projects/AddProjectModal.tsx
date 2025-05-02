@@ -40,7 +40,7 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
       if (form.name && fields.length > 0) {
         await Promise.all(
           fields.map((field) =>
-            fetch(`/api/projects/${encodeURIComponent(form.name)}/fields`, {
+            fetch(`/api/projects/${encodeURIComponent(form.name as string)}/fields`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ field_name: field }),

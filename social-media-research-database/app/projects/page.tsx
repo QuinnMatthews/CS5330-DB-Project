@@ -13,7 +13,7 @@ import {
   Spinner,
   Stack,
 } from "react-bootstrap";
-import AddNewProjectModal from "./AddNewProjectModal";
+import AddProjectModal from "./AddProjectModal";
 import EditProjectModal from "./EditProjectModal";
 
 export default function ProjectsPage() {
@@ -139,7 +139,7 @@ export default function ProjectsPage() {
           onRefresh={fetchProjects}
         />
 
-        <AddNewProjectModal
+        <AddProjectModal
           show={showEditModal}
           onHide={() => setShowEditModal(false)}
           onRefresh={fetchProjects}
