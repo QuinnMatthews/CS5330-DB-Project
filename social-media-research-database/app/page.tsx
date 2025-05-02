@@ -1,246 +1,95 @@
 "use client";
+import Link from "next/link";
+import { Container, Row, Col, Card, Button } from "react-bootstrap";
 
-import { useEffect, useState } from "react";
-import AddSocialModal from "./socials/AddSocialModal";
-import AddUserModal from "./users/AddUserModal";
-import DeleteUserModal from "./users/DeleteUserModal";
-import UpdateUserModal from "./users/UpdateUserModal";
-
-export default function Home() {
-  const [socialData, setSocialData] = useState<any[]>([]);
-  const [socialsLoading, setSocialsLoading] = useState(true);
-
-  const [userData, setUserData] = useState<any[]>([]);
-  const [userLoading, setUserLoading] = useState(true);
-
-  // MARK: Social modals
-
-  const [showAddSocialModal, setShowAddSocialModal] = useState(false);
-
-  const openAddSocialModal = () => setShowAddSocialModal(true);
-  const closeAddSocialModal = () => {
-    setShowAddSocialModal(false);
-    // Trigger a re-fetch
-    fetchSocials();
-  };
-
-  // MARK: User modals
-
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-
-  const openAddUserModal = () => setShowAddUserModal(true);
-  const closeAddUserModal = () => {
-    setShowAddUserModal(false);
-    // Trigger a re-fetch
-    fetchUsers();
-  };
-
-  const [showUpdateUserModal, setShowUpdateUserModal] = useState(false);
-
-  const openUpdateUserModal = () => setShowUpdateUserModal(true);
-  const closeUpdateUserModal = () => {
-    setShowUpdateUserModal(false);
-    // Trigger a re-fetch
-    fetchUsers();
-  };
-
-  const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
-
-  const openDeleteUserModal = () => setShowDeleteUserModal(true);
-  const closeDeleteUserModal = () => {
-    setShowDeleteUserModal(false);
-    // Trigger a re-fetch
-    fetchUsers();
-  };
-
-  // Fetch functions
-  const fetchSocials = () => {
-    fetch("/api/socials")
-      .then((response) => response.json())
-      .then((data) => {
-        setSocialData(data);
-        setSocialsLoading(false);
-      });
-  };
-
-  const fetchUsers = () => {
-    fetch("/api/users")
-      .then((response) => response.json())
-      .then((data) => {
-        setUserData(data);
-        setUserLoading(false);
-      });
-  };
-
-  // Delete social
-  const deleteSocial = async (social: any) => {
-    const response = await fetch(`/api/socials`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(social),
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    // Trigger a re-fetch
-    fetchSocials();
-  };
-
-  // Run once on mount
-  useEffect(() => {
-    fetchSocials();
-    fetchUsers();
-  }, []);
-
+export default function HomePage() {
   return (
-    <div>
-      {/* Navbar */}
-      <nav className="navbar navbar-expand-lg bg-body-tertiary">
-        <div className="container-fluid">
-          <a className="navbar-brand" href="#">
-            Navbar
-          </a>
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
-          <div className="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-              <li className="nav-item">
-                <a className="nav-link active" aria-current="page" href="#">
-                  Home
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link active" aria-current="page" href="#">
-                  Contact Us
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link active" aria-current="page" href="#">
-                  About Us
-                </a>
-              </li>
-              <li className="nav-item">
-                <a className="nav-link" href="#">
-                  Link
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </nav>
+    <Container fluid>
+      <Row className="mb-4">
+        <Col>
+          <h2 className="fw-bold">Welcome to the Social Media Research Database</h2>
+          <p className="text-muted">
+            Manage social media posts, research projects, and analytical results with ease.
+          </p>
+        </Col>
+      </Row>
+      <h3>Manage Data</h3>
+      <Row className="g-4 mb-4">
+        <Col md={4}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Card.Title>Manage Platforms</Card.Title>
+              <Card.Text>Add or update post details and analysis results.</Card.Text>
+              <Link href="/socials" passHref>
+                <Button variant="info">Go to Platforms</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
 
-      {/* Header */}
-      <h2 className="text-center text-bg-primary m-2 p-2">
-        Social Media Research Database
-      </h2>
+        <Col md={4}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Card.Title>Manage Users</Card.Title>
+              <Card.Text>View and update users in the database.</Card.Text>
+              <Link href="/users" passHref>
+                <Button variant="secondary">Go to Users</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
 
-      {/* Social Media Platforms */}
-      <div className="container-fluid m-2 border border-success text-center">
-        <h4>Social Media Platforms</h4>{" "}
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th scope="col">Platform</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {socialsLoading ? (
-              <tr>
-                <td> Loading...</td>
-              </tr>
-            ) : (
-              socialData.map((social: any) => (
-                <tr key={social.name}>
-                  <td>{social.name}</td>
-                  <td>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => deleteSocial(social)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        <button className="btn btn-primary m-2" onClick={openAddSocialModal}>
-          Add
-        </button>
-      </div>
+        <Col md={4}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Card.Title>Manage Posts</Card.Title>
+              <Card.Text>View and update social media posts in the database.</Card.Text>
+              <Link href="/posts" passHref>
+                <Button variant="primary">Go to Posts</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
 
-      {/* User Data */}
-      <div className="container-fluid m-2 border border-success text-center">
-        <h4>User Data</h4>{" "}
-        <table className="table table-striped">
-          <thead>
-            <tr>
-              <th scope="col">Username</th>
-              <th scope="col">Social Platform</th>
-              <th scope="col">First Name</th>
-              <th scope="col">Last Name</th>
-              <th scope="col">Birthdate</th>
-              <th scope="col">Gender</th>
-              <th scope="col">Birth Country</th>
-              <th scope="col">Residence Country</th>
-            </tr>
-          </thead>
-          <tbody>
-            {userLoading ? (
-              <tr>
-                <td>Loading...</td>
-              </tr>
-            ) : (
-              userData.map((user: any) => (
-                <tr key={user.social_name + "." + user.username}>
-                  <td>{user.username}</td>
-                  <td>{user.social_name}</td>
-                  <td>{user.first_name}</td>
-                  <td>{user.last_name}</td>
-                  <td>{user.birthdate}</td>
-                  <td>{user.gender}</td>
-                  <td>{user.birth_country}</td>
-                  <td>{user.residence_country}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        <button className="btn btn-primary m-2" onClick={openAddUserModal}>
-          Add
-        </button>
-        <button className="btn btn-secondary m-2" onClick={openUpdateUserModal}>
-          Update
-        </button>
-        <button className="btn btn-danger m-2" onClick={openDeleteUserModal}>
-          Delete
-        </button>
-      </div>
+        <Col md={4}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Card.Title>New Project</Card.Title>
+              <Card.Text>Create a new analysis project and define your metadata.</Card.Text>
+              <Link href="/projects" passHref>
+                <Button variant="success">Create Project</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
 
-      {/* Modals */}
-      <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
-      <AddUserModal show={showAddUserModal} onClose={closeAddUserModal} />
-      <UpdateUserModal
-        show={showUpdateUserModal}
-        onClose={closeUpdateUserModal}
-      />
-      <DeleteUserModal
-        show={showDeleteUserModal}
-        onClose={closeDeleteUserModal}
-      />
-    </div>
+</Row>
+<h3> Query </h3>
+<Row className="g-4">
+        <Col md={4}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Card.Title>Search Posts</Card.Title>
+              <Card.Text>Query posts by media, user, name, or date range.</Card.Text>
+              <Link href="/posts" passHref>
+                <Button variant="success">Search Posts</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={4}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <Card.Title>Search Experiments</Card.Title>
+              <Card.Text>Explore projects and view analysis summaries.</Card.Text>
+              <Link href="/search-experiments" passHref>
+                <Button variant="dark">Search Experiments</Button>
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 }
