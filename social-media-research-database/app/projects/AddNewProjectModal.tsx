@@ -38,13 +38,15 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
       });
       if (!res.ok) throw new Error("Project creation failed");
       if (form.name && fields.length > 0) {
-        for (const field of fields) {
-          await fetch(`/api/projects/${encodeURIComponent(form.name)}/fields`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ field_name: field }),
-          });
-        }
+        await Promise.all(
+          fields.map((field) =>
+            fetch(`/api/projects/${encodeURIComponent(form.name)}/fields`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ field_name: field }),
+            })
+          )
+        );
       }
       setForm({});
       setFields([]);
