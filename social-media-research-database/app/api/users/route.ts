@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
 
     // Execute the query
     const result = await connection.execute(new_exp_query, [
-    body.username, body.social_name, body.first_name, body.last_name,
-    body.birthdate, body.gender, body.birth_country, body.residence_country])
-    
+      body.username, body.social_name, body.first_name, body.last_name,
+      body.birthdate, body.gender, body.birth_country, body.residence_country])
+
     // Close the database connection
     connection.end()
     // return the results as a JSON API response
@@ -77,10 +77,11 @@ export async function PATCH(request: NextRequest) {
 
     // Execute the query
     const result = await connection.execute(new_exp_query, [
-    body.first_name, body.last_name,
-    body.birthdate, body.gender, body.birth_country, body.residence_country,
-    body.username, body.social_name])
-    
+      body.first_name, body.last_name,
+      new Date(body.birthdate).toISOString().split('T')[0],
+      body.gender, body.birth_country, body.residence_country,
+      body.username, body.social_name])
+
     // Close the database connection
     connection.end()
     // return the results as a JSON API response
@@ -105,7 +106,7 @@ export async function DELETE(request: NextRequest) {
 
     // Execute the query
     const result = await connection.execute(new_exp_query, [body.username, body.social_name])
-    
+
     // Close the database connection
     connection.end()
     // return the results as a JSON API response
