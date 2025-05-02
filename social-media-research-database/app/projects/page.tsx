@@ -22,8 +22,8 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -63,7 +63,7 @@ export default function ProjectsPage() {
             <p className="text-muted">
               View, add, and edit tracked analysis projects and their fields.
             </p>
-            <Button onClick={() => setShowEditModal(true)} variant="primary">
+            <Button onClick={() => setShowAddModal(true)} variant="primary">
               + New Project
             </Button>
           </Col>
@@ -117,7 +117,7 @@ export default function ProjectsPage() {
                           size="sm"
                           onClick={() => {
                             setSelectedProject(p);
-                            setShowAddModal(true);
+                            setShowEditModal(true);
                           }}
                         >
                           Edit
@@ -132,16 +132,16 @@ export default function ProjectsPage() {
         </Row>
 
         <EditProjectModal
-          show={showAddModal}
-          onHide={() => setShowAddModal(false)}
+          show={showEditModal}
+          onHide={() => setShowEditModal(false)}
           selectedProject={selectedProject}
           fields={fields}
           onRefresh={fetchProjects}
         />
 
         <AddProjectModal
-          show={showEditModal}
-          onHide={() => setShowEditModal(false)}
+          show={showAddModal}
+          onHide={() => setShowAddModal(false)}
           onRefresh={fetchProjects}
         />
       </Stack>
