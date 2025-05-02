@@ -19,7 +19,7 @@ export default function HomePage() {
           <Card className="shadow-sm">
             <Card.Body>
               <Card.Title>Manage Platforms</Card.Title>
-              <Card.Text>Add or update post details and analysis results.</Card.Text>
+              <Card.Text>Add or update social media platforms.</Card.Text>
               <Link href="/socials" passHref>
                 <Button variant="info">Go to Platforms</Button>
               </Link>
@@ -71,7 +71,7 @@ export default function HomePage() {
             <Card.Body>
               <Card.Title>Search Posts</Card.Title>
               <Card.Text>Query posts by media, user, name, or date range.</Card.Text>
-              <Link href="/posts" passHref>
+              <Link href="/search-posts" passHref>
                 <Button variant="success">Search Posts</Button>
               </Link>
             </Card.Body>

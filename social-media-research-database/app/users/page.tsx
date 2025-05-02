@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { Platform } from "../socials/types";
 import { User } from "./types";
 import {
-  Container, Row, Col, Form, Button, Table, Alert, Spinner, Modal,
+  Container,
+  Row,
+  Col,
+  Form,
+  Button,
+  Table,
+  Alert,
+  Spinner,
+  Modal,
 } from "react-bootstrap";
 
 export default function UsersPage() {
@@ -22,17 +30,18 @@ export default function UsersPage() {
       const res = await fetch("/api/users");
       const data = await res.json();
 
-      setUsers(data.map((u: any) => ({
-        social_name: u.social_name,
-        username: u.username,
-        first_name: u.first_name,
-        last_name: u.last_name,
-        birthdate: new Date(u.birthdate),
-        gender: u.gender,
-        birth_country: u.birth_country,
-        residence_country: u.residence_country,
-      })));
-
+      setUsers(
+        data.map((u: any) => ({
+          social_name: u.social_name,
+          username: u.username,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          birthdate: new Date(u.birthdate),
+          gender: u.gender,
+          birth_country: u.birth_country,
+          residence_country: u.residence_country,
+        }))
+      );
     } catch (err) {
       setError("Failed to load users.");
     } finally {
@@ -64,12 +73,18 @@ export default function UsersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
-
-      if (!res.ok) throw new Error("Failed to add user.");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            `Failed to add user: ${res.status} ${res.statusText}`
+        );
+      }
       setNewUser({});
       await fetchUsers();
-    } catch {
-      setError("Could not add user.");
+    } catch (err: any) {
+      setError(`Could not add user: ${err.message || "Unknown error"}`);
+      console.error("Add user error:", err);
     } finally {
       setSaving(false);
     }
@@ -141,7 +156,11 @@ export default function UsersPage() {
               {saving ? "Saving..." : "Add User"}
             </Button>
           </Form>
-          {error && <Alert className="mt-3" variant="danger">{error}</Alert>}
+          {error && (
+            <Alert className="mt-3" variant="danger">
+              {error}
+            </Alert>
+          )}
         </Col>
       </Row>
 
@@ -166,7 +185,9 @@ export default function UsersPage() {
                   <tr key={`${u.social_name}-${u.username}`}>
                     <td>{u.social_name}</td>
                     <td>{u.username}</td>
-                    <td>{u.first_name || ""} {u.last_name || ""}</td>
+                    <td>
+                      {u.first_name || ""} {u.last_name || ""}
+                    </td>
                     <td>{u.birthdate?.toDateString() || "-"}</td>
                     <td>
                       <Button
@@ -186,11 +207,7 @@ export default function UsersPage() {
       </Row>
 
       {/* Edit Modal */}
-      <Modal
-        show={!!editingUser}
-        onHide={() => setEditingUser(null)}
-        centered
-      >
+      <Modal show={!!editingUser} onHide={() => setEditingUser(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Edit User</Modal.Title>
         </Modal.Header>
@@ -202,7 +219,10 @@ export default function UsersPage() {
                 <Form.Control
                   value={editingUser.first_name || ""}
                   onChange={(e) =>
-                    setEditingUser({ ...editingUser, first_name: e.target.value })
+                    setEditingUser({
+                      ...editingUser,
+                      first_name: e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -212,7 +232,10 @@ export default function UsersPage() {
                 <Form.Control
                   value={editingUser.last_name || ""}
                   onChange={(e) =>
-                    setEditingUser({ ...editingUser, last_name: e.target.value })
+                    setEditingUser({
+                      ...editingUser,
+                      last_name: e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -221,9 +244,14 @@ export default function UsersPage() {
                 <Form.Label>Birthdate</Form.Label>
                 <Form.Control
                   type="date"
-                  value={editingUser.birthdate?.toISOString().split("T")[0] || ""}
+                  value={
+                    editingUser.birthdate?.toISOString().split("T")[0] || ""
+                  }
                   onChange={(e) =>
-                    setEditingUser({ ...editingUser, birthdate: new Date(e.target.value) })
+                    setEditingUser({
+                      ...editingUser,
+                      birthdate: new Date(e.target.value),
+                    })
                   }
                 />
               </Form.Group>
@@ -248,7 +276,10 @@ export default function UsersPage() {
                 <Form.Control
                   value={editingUser.birth_country || ""}
                   onChange={(e) =>
-                    setEditingUser({ ...editingUser, birth_country: e.target.value })
+                    setEditingUser({
+                      ...editingUser,
+                      birth_country: e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -258,7 +289,10 @@ export default function UsersPage() {
                 <Form.Control
                   value={editingUser.residence_country || ""}
                   onChange={(e) =>
-                    setEditingUser({ ...editingUser, residence_country: e.target.value })
+                    setEditingUser({
+                      ...editingUser,
+                      residence_country: e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -269,7 +303,11 @@ export default function UsersPage() {
           <Button variant="secondary" onClick={() => setEditingUser(null)}>
             Cancel
           </Button>
-          <Button variant="success" onClick={handleUpdateUser} disabled={saving}>
+          <Button
+            variant="success"
+            onClick={handleUpdateUser}
+            disabled={saving}
+          >
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </Modal.Footer>

@@ -15,6 +15,7 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
   const [fields, setFields] = useState<string[]>([]);
   const [newField, setNewField] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
 
   const handleAddField = () => {
     if (newField.trim() && !fields.includes(newField.trim())) {
@@ -36,15 +37,24 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error("Project creation failed");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            `Project creation failed with status: ${res.status}`
+        );
+      }
       if (form.name && fields.length > 0) {
         await Promise.all(
           fields.map((field) =>
-            fetch(`/api/projects/${encodeURIComponent(form.name as string)}/fields`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ field_name: field }),
-            })
+            fetch(
+              `/api/projects/${encodeURIComponent(form.name as string)}/fields`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ field_name: field }),
+              }
+            )
           )
         );
       }
@@ -53,8 +63,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
       setNewField("");
       onHide();
       onRefresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to create project", err);
+      setErrors(["Failed to create project: " + err.message]);
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +94,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Label>Institute</Form.Label>
                 <Form.Control
                   value={form.institute_name || ""}
-                  onChange={(e) => setForm({ ...form, institute_name: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, institute_name: e.target.value })
+                  }
                 />
               </Form.Group>
             </Col>
@@ -94,7 +107,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Label>Manager First Name</Form.Label>
                 <Form.Control
                   value={form.manager_first_name || ""}
-                  onChange={(e) => setForm({ ...form, manager_first_name: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, manager_first_name: e.target.value })
+                  }
                 />
               </Form.Group>
             </Col>
@@ -103,7 +118,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Label>Manager Last Name</Form.Label>
                 <Form.Control
                   value={form.manager_last_name || ""}
-                  onChange={(e) => setForm({ ...form, manager_last_name: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, manager_last_name: e.target.value })
+                  }
                 />
               </Form.Group>
             </Col>
@@ -115,7 +132,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Control
                   type="date"
                   value={form.start_date || ""}
-                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, start_date: e.target.value })
+                  }
                 />
               </Form.Group>
             </Col>
@@ -125,7 +144,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Control
                   type="date"
                   value={form.end_date || ""}
-                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, end_date: e.target.value })
+                  }
                 />
               </Form.Group>
             </Col>
@@ -142,7 +163,11 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
               />
             </Col>
             <Col md={2}>
-              <Button variant="outline-success" className="w-100" onClick={handleAddField}>
+              <Button
+                variant="outline-success"
+                className="w-100"
+                onClick={handleAddField}
+              >
                 Add
               </Button>
             </Col>
@@ -151,7 +176,10 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
           {fields.length > 0 && (
             <ul className="list-unstyled">
               {fields.map((field) => (
-                <li key={field} className="mb-2 d-flex align-items-center gap-2">
+                <li
+                  key={field}
+                  className="mb-2 d-flex align-items-center gap-2"
+                >
                   <Form.Control value={field} disabled className="me-2" />
                   <Button
                     variant="outline-danger"
@@ -160,6 +188,16 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                   >
                     Remove
                   </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {errors.length > 0 && (
+            <ul className="list-unstyled mb-3">
+              {errors.map((error) => (
+                <li key={error} className="text-danger">
+                  {error}
                 </li>
               ))}
             </ul>

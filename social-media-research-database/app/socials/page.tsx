@@ -68,6 +68,9 @@ export default function PlatformsPage() {
   };
 
   const handleDelete = async (name: string) => {
+    if (!window.confirm(`Are you sure you want to delete the platform "${name}"?`)) {
+      return;
+    }
     setDeletingName(name);
     try {
       const res = await fetch(`/api/socials`, {
@@ -75,10 +78,13 @@ export default function PlatformsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
-
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.message || `Server error (${res.status})`);
+      }
       await fetchPlatforms();
-    } catch {
+    } catch (err) {
+      console.error(`Failed to delete platform: ${name}`, err);
       setError(`Failed to delete platform: ${name}`);
     } finally {
       setDeletingName(null);
