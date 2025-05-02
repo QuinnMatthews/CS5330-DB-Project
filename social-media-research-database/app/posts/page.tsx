@@ -29,6 +29,7 @@ export default function PostsPage() {
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
   const [usernamesForPlatform, setUsernamesForPlatform] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // TODO: Replace with real GET /api/posts
@@ -57,7 +58,9 @@ export default function PostsPage() {
         );
         setPlatforms(platformList);
       })
-      .catch(console.error);
+      .catch((error) => {
+        setError("Failed to load users: " + error.message);
+      });
   }, []);
 
   const handlePlatformChange = (platform: string) => {
@@ -230,6 +233,9 @@ export default function PostsPage() {
         </Col>
       </Row>
 
+      {/* Error Message */}
+      {error && <div className="alert alert-danger">{error}</div>}
+
       {/* Posts Table */}
       <Row>
         <Col>
@@ -252,7 +258,7 @@ export default function PostsPage() {
                 <tr
                   key={`${post.username}-${post.social_name}-${post.datetime}-${index}`}
                 >
-                  <td>{post.text.slice(0, 50)}...</td>
+                  <td>{post.text.length > 50 ? `${post.text.slice(0, 50)}...` : post.text}</td>
                   <td>{post.social_name}</td>
                   <td>{post.username}</td>
                   <td>{new Date(post.datetime).toLocaleString()}</td>
