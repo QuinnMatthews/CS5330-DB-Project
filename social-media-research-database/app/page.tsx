@@ -1,24 +1,20 @@
-"use client"
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-import { useEffect, useState } from 'react';
-
-import AddSocialModal from './socials/AddSocialModal';
-
-import AddUserModal from './users/AddUserModal';
-import DeleteUserModal from './users/DeleteUserModal';
-import UpdateUserModal from './users/UpdateUserModal';
+import { useEffect, useState } from "react";
+import AddSocialModal from "./socials/AddSocialModal";
+import AddUserModal from "./users/AddUserModal";
+import DeleteUserModal from "./users/DeleteUserModal";
+import UpdateUserModal from "./users/UpdateUserModal";
 
 export default function Home() {
   const [socialData, setSocialData] = useState<any[]>([]);
   const [socialsLoading, setSocialsLoading] = useState(true);
-  
+
   const [userData, setUserData] = useState<any[]>([]);
   const [userLoading, setUserLoading] = useState(true);
-  
+
   // MARK: Social modals
-  
+
   const [showAddSocialModal, setShowAddSocialModal] = useState(false);
 
   const openAddSocialModal = () => setShowAddSocialModal(true);
@@ -27,29 +23,29 @@ export default function Home() {
     // Trigger a re-fetch
     fetchSocials();
   };
-  
+
   // MARK: User modals
-  
+
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  
+
   const openAddUserModal = () => setShowAddUserModal(true);
   const closeAddUserModal = () => {
     setShowAddUserModal(false);
     // Trigger a re-fetch
     fetchUsers();
   };
-  
+
   const [showUpdateUserModal, setShowUpdateUserModal] = useState(false);
-  
+
   const openUpdateUserModal = () => setShowUpdateUserModal(true);
   const closeUpdateUserModal = () => {
     setShowUpdateUserModal(false);
     // Trigger a re-fetch
     fetchUsers();
   };
-  
+
   const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
-  
+
   const openDeleteUserModal = () => setShowDeleteUserModal(true);
   const closeDeleteUserModal = () => {
     setShowDeleteUserModal(false);
@@ -59,7 +55,7 @@ export default function Home() {
 
   // Fetch functions
   const fetchSocials = () => {
-    fetch('/api/socials')
+    fetch("/api/socials")
       .then((response) => response.json())
       .then((data) => {
         setSocialData(data);
@@ -68,12 +64,28 @@ export default function Home() {
   };
 
   const fetchUsers = () => {
-    fetch('/api/users')
+    fetch("/api/users")
       .then((response) => response.json())
       .then((data) => {
         setUserData(data);
         setUserLoading(false);
       });
+  };
+
+  // Delete social
+  const deleteSocial = async (social: any) => {
+    const response = await fetch(`/api/socials`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(social),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    // Trigger a re-fetch
+    fetchSocials();
   };
 
   // Run once on mount
@@ -127,12 +139,12 @@ export default function Home() {
           </div>
         </div>
       </nav>
-      
+
       {/* Header */}
       <h2 className="text-center text-bg-primary m-2 p-2">
         Social Media Research Database
       </h2>
-      
+
       {/* Social Media Platforms */}
       <div className="container-fluid m-2 border border-success text-center">
         <h4>Social Media Platforms</h4>{" "}
@@ -140,25 +152,36 @@ export default function Home() {
           <thead>
             <tr>
               <th scope="col">Platform</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
-            {socialsLoading? (
+            {socialsLoading ? (
               <tr>
                 <td> Loading...</td>
               </tr>
             ) : (
               socialData.map((social: any) => (
                 <tr key={social.name}>
-                  <td >{social.name}</td>
+                  <td>{social.name}</td>
+                  <td>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => deleteSocial(social)}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
-          </table>
-          <button className="btn btn-primary m-2" onClick={openAddSocialModal}>Add</button>
+        </table>
+        <button className="btn btn-primary m-2" onClick={openAddSocialModal}>
+          Add
+        </button>
       </div>
-      
+
       {/* User Data */}
       <div className="container-fluid m-2 border border-success text-center">
         <h4>User Data</h4>{" "}
@@ -176,36 +199,48 @@ export default function Home() {
             </tr>
           </thead>
           <tbody>
-          {userLoading ? (
-            <tr>
-              <td>Loading...</td>
-            </tr>
-          ) : (
-            userData.map((user: any) => (
-              <tr key={user.social_name + "." + user.username}>
-                <td>{user.username}</td>
-                <td>{user.social_name}</td>
-                <td>{user.first_name}</td>
-                <td>{user.last_name}</td>
-                <td>{user.birthdate}</td>
-                <td>{user.gender}</td>
-                <td>{user.birth_country}</td>
-                <td>{user.residence_country}</td>
+            {userLoading ? (
+              <tr>
+                <td>Loading...</td>
               </tr>
-            ))
-          )}
+            ) : (
+              userData.map((user: any) => (
+                <tr key={user.social_name + "." + user.username}>
+                  <td>{user.username}</td>
+                  <td>{user.social_name}</td>
+                  <td>{user.first_name}</td>
+                  <td>{user.last_name}</td>
+                  <td>{user.birthdate}</td>
+                  <td>{user.gender}</td>
+                  <td>{user.birth_country}</td>
+                  <td>{user.residence_country}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
-        <button className="btn btn-primary m-2" onClick={openAddUserModal}>Add</button>
-        <button className="btn btn-secondary m-2" onClick={openUpdateUserModal}>Update</button>
-        <button className="btn btn-danger m-2" onClick={openDeleteUserModal}>Delete</button>
+        <button className="btn btn-primary m-2" onClick={openAddUserModal}>
+          Add
+        </button>
+        <button className="btn btn-secondary m-2" onClick={openUpdateUserModal}>
+          Update
+        </button>
+        <button className="btn btn-danger m-2" onClick={openDeleteUserModal}>
+          Delete
+        </button>
       </div>
-      
+
       {/* Modals */}
       <AddSocialModal show={showAddSocialModal} onClose={closeAddSocialModal} />
       <AddUserModal show={showAddUserModal} onClose={closeAddUserModal} />
-      <UpdateUserModal show={showUpdateUserModal} onClose={closeUpdateUserModal} />
-      <DeleteUserModal show={showDeleteUserModal} onClose={closeDeleteUserModal} />
+      <UpdateUserModal
+        show={showUpdateUserModal}
+        onClose={closeUpdateUserModal}
+      />
+      <DeleteUserModal
+        show={showDeleteUserModal}
+        onClose={closeDeleteUserModal}
+      />
     </div>
   );
 }
