@@ -79,12 +79,8 @@ export default function SearchPostsPage() {
       }
       const data = await res.json();
       setPosts(data);
-    }  catch (err: unknown) {
-      if (err && typeof err === "object" && "message" in err && typeof (err as any).message === "string") {
-        setError("Failed to fetch posts: " + (err as any).message);
-      } else {
-        setError("Failed to fetch posts: An unknown error occurred");
-      }
+    } catch (err: any) {
+      setError("Failed to fetch posts: " + err.message);
     }
   };
 
