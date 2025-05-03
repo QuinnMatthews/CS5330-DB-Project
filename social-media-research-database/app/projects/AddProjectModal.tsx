@@ -96,13 +96,18 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ field_name: field }),
-              },
-            ).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }))
-          ),
+              }
+            ).then(async (r) => ({
+              ok: r.ok,
+              data: await r.json().catch(() => ({})),
+            }))
+          )
         );
         const failed = fieldResults.find((r) => !r.ok);
         if (failed) {
-          setGeneralError(failed.data?.error ?? "Failed to add one or more fields");
+          setGeneralError(
+            failed.data?.error ?? "Failed to add one or more fields"
+          );
           return;
         }
       }
@@ -156,7 +161,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Label>Institute</Form.Label>
                 <Form.Control
                   value={form.institute || ""}
-                  onChange={(e) => setForm({ ...form, institute: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, institute: e.target.value })
+                  }
                   isInvalid={!!getFieldError("institute")}
                   required
                 />
@@ -172,7 +179,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Label>Manager First Name</Form.Label>
                 <Form.Control
                   value={form.manager_first || ""}
-                  onChange={(e) => setForm({ ...form, manager_first: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, manager_first: e.target.value })
+                  }
                   isInvalid={!!getFieldError("manager_first")}
                   required
                 />
@@ -186,7 +195,9 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
                 <Form.Label>Manager Last Name</Form.Label>
                 <Form.Control
                   value={form.manager_last || ""}
-                  onChange={(e) => setForm({ ...form, manager_last: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, manager_last: e.target.value })
+                  }
                   isInvalid={!!getFieldError("manager_last")}
                   required
                 />
@@ -262,7 +273,10 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
           {fields.length > 0 && (
             <ul className="list-unstyled">
               {fields.map((field) => (
-                <li key={field} className="mb-2 d-flex align-items-center gap-2">
+                <li
+                  key={field}
+                  className="mb-2 d-flex align-items-center gap-2"
+                >
                   <Form.Control value={field} disabled className="me-2" />
                   <Button
                     variant="outline-danger"
