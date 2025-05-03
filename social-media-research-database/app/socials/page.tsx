@@ -42,54 +42,93 @@ export default function PlatformsPage() {
 
   const handleAddPlatform = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPlatform.trim()) {
+    setSubmitting(true);
+    setError(null);
+  
+    const trimmed = newPlatform.trim();
+    if (!trimmed) {
       setError("Platform name cannot be empty.");
+      setSubmitting(false);
       return;
     }
-
-    setSubmitting(true);
+  
     try {
       const res = await fetch("/api/socials", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newPlatform.trim() }),
+        body: JSON.stringify({ name: trimmed }),
       });
-
-      if (!res.ok) throw new Error("Failed to add platform.");
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || "Failed to add platform.");
+      }
+  
       setNewPlatform("");
-      setError(null);
       await fetchPlatforms();
-    } catch (err) {
-      console.error(err);
-      setError("Platform might already exist or server error occurred.");
+    } catch (err: any) {
+      console.error("Add platform error:", err);
+      setError(`Could not add platform: ${err.message || "Unknown error"}`);
     } finally {
       setSubmitting(false);
     }
   };
-
+  
   const handleDelete = async (name: string) => {
     if (!window.confirm(`Are you sure you want to delete the platform "${name}"?`)) {
       return;
     }
+  
     setDeletingName(name);
+    setError(null);
+  
     try {
       const res = await fetch(`/api/socials`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
+  
       if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.message || `Server error (${res.status})`);
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || `Failed to delete platform: ${name}`);
       }
+  
       await fetchPlatforms();
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Failed to delete platform: ${name}`, err);
-      setError(`Failed to delete platform: ${name}`);
+      setError(`Could not delete platform: ${err.message || "Unknown error"}`);
     } finally {
       setDeletingName(null);
     }
   };
+  
 
   return (
     <Container>
