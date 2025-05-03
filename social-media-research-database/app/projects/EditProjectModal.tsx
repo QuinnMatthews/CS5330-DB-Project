@@ -8,7 +8,6 @@ type Props = {
   show: boolean;
   onHide: () => void;
   selectedProject: Project | null;
-  fields: Field[];
   onRefresh: () => void;
 };
 
@@ -16,7 +15,6 @@ export default function EditProjectModal({
   show,
   onHide,
   selectedProject,
-  fields,
   onRefresh,
 }: Props) {
   const [projectForm, setProjectForm] = useState<Partial<Project>>({});
@@ -36,12 +34,9 @@ export default function EditProjectModal({
     setSubmitting(true);
     try {
       await fetch(`/api/projects`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          originalName: selectedProject.name,
-          updated: projectForm,
-        }),
+        body: JSON.stringify(projectForm),
       });
       onRefresh();
     } catch (err) {
@@ -69,7 +64,7 @@ export default function EditProjectModal({
       onRefresh();
     } catch (err) {
       console.error("Failed to add field", err);
-      setError(err instanceof Error? err.message : "Failed to add field");
+      setError(err instanceof Error ? err.message : "Failed to add field");
     } finally {
       setSubmitting(false);
     }
@@ -89,7 +84,7 @@ export default function EditProjectModal({
       onRefresh();
     } catch (err) {
       console.error("Failed to delete field", err);
-      setError(err instanceof Error? err.message : "Failed to delete field");
+      setError(err instanceof Error ? err.message : "Failed to delete field");
     }
   };
 
@@ -101,29 +96,18 @@ export default function EditProjectModal({
       <Modal.Body>
         {selectedProject && (
           <>
+            <h3>{projectForm.name}</h3>
             <Form onSubmit={handleProjectUpdate} className="mb-4">
               <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Project Name</Form.Label>
-                    <Form.Control
-                      value={projectForm.name || ""}
-                      onChange={(e) =>
-                        setProjectForm({ ...projectForm, name: e.target.value })
-                      }
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
+                <Col md={12}>
                   <Form.Group className="mb-3">
                     <Form.Label>Institute</Form.Label>
                     <Form.Control
-                      value={projectForm.institute_name || ""}
+                      value={projectForm.institute || ""}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
-                          institute_name: e.target.value,
+                          institute: e.target.value,
                         })
                       }
                     />
@@ -135,11 +119,11 @@ export default function EditProjectModal({
                   <Form.Group className="mb-3">
                     <Form.Label>Manager First Name</Form.Label>
                     <Form.Control
-                      value={projectForm.manager_first_name || ""}
+                      value={projectForm.manager_first || ""}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
-                          manager_first_name: e.target.value,
+                          manager_first: e.target.value,
                         })
                       }
                     />
@@ -149,11 +133,11 @@ export default function EditProjectModal({
                   <Form.Group className="mb-3">
                     <Form.Label>Manager Last Name</Form.Label>
                     <Form.Control
-                      value={projectForm.manager_last_name || ""}
+                      value={projectForm.manager_last || ""}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
-                          manager_last_name: e.target.value,
+                          manager_last: e.target.value,
                         })
                       }
                     />
@@ -166,11 +150,11 @@ export default function EditProjectModal({
                     <Form.Label>Start Date</Form.Label>
                     <Form.Control
                       type="date"
-                      value={projectForm.start_date || ""}
+                      value={projectForm.start_date?.toISOString().split('T')[0] || ""}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
-                          start_date: e.target.value,
+                          start_date: new Date(e.target.value),
                         })
                       }
                     />
@@ -181,17 +165,18 @@ export default function EditProjectModal({
                     <Form.Label>End Date</Form.Label>
                     <Form.Control
                       type="date"
-                      value={projectForm.end_date || ""}
+                      value={projectForm.end_date?.toISOString().split('T')[0] || ""}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
-                          end_date: e.target.value,
+                          end_date: new Date(e.target.value),
                         })
                       }
                     />
                   </Form.Group>
                 </Col>
               </Row>
+              {error && <div className="alert alert-danger">{error}</div>}
               <Button type="submit" variant="primary" disabled={submitting}>
                 Save Changes
               </Button>
@@ -226,24 +211,21 @@ export default function EditProjectModal({
                 </tr>
               </thead>
               <tbody>
-                {fields
-                  .filter((f) => f.project_id === selectedProject.id)
-                  .map((f) => (
-                    <tr key={f.field_name} className="">
-                      <td>{f.field_name}</td>
-                      <td className="p-2">
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDeleteField(f.field_name)}
-                        >
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                {fields.filter((f) => f.project_id === selectedProject.id)
-                  .length === 0 && (
+                {selectedProject.fields.map((f) => (
+                  <tr key={f} className="">
+                    <td>{f}</td>
+                    <td className="p-2">
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleDeleteField(f)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {selectedProject.fields.length === 0 && (
                   <tr>
                     <td colSpan={2} className="text-center text-muted">
                       No fields added yet.

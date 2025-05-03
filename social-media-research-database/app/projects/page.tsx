@@ -18,7 +18,6 @@ import EditProjectModal from "./EditProjectModal";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [fields, setFields] = useState<Field[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,30 +28,62 @@ export default function ProjectsPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/projects");
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `HTTP Error: ${res.status} ${res.statusText}`
+        );
+      }
+
       const projectsData = await res.json();
-      setProjects(projectsData);
 
-      const allFields = await Promise.all(
-        projectsData.map(async (p: Project) => {
-          const res = await fetch(`/api/projects/${encodeURIComponent(p.name)}/fields`);
-          const data = await res.json();
-          return data.map((f: Field) => ({ ...f, project_id: p.id }));
-        })
-      );
+      // Map to correct types
+      const projectsDataCorrected: Project[] = projectsData.map((p: any) => ({
+        name: p.name,
+        manager_first: p.manager_first,
+        manager_last: p.manager_last,
+        institute: p.institute,
+        start_date: new Date(p.start_date),
+        end_date: new Date(p.end_date),
+        fields: p.fields,
+      }));
 
-      setFields(allFields.flat());
-    } catch (err) {
+      setProjects(projectsDataCorrected);
+    } catch (err: any) {
       console.error(err);
-      setError("Failed to load projects or fields.");
+      setError(`Could not fetch projects: ${err.message || "Unknown error"}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteProject = async (projectName: string) => {
+    try {
+      const res = await fetch(`/api/projects`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: projectName }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `HTTP Error: ${res.status} ${res.statusText}`
+        );
+      }
+
+      fetchProjects();
+      
+    } catch (err: any) {
+      console.error(err);
+      setError(`Could not delete project: ${err.message || "Unknown error"}`);
     }
   };
 
   useEffect(() => {
     fetchProjects();
   }, []);
-
 
   return (
     <Container className="py-4">
@@ -97,17 +128,22 @@ export default function ProjectsPage() {
                 </thead>
                 <tbody>
                   {projects.map((p) => (
-                    <tr key={p.id}>
+                    <tr key={p.name}>
                       <td className="fw-semibold">{p.name}</td>
-                      <td>{p.manager_first_name} {p.manager_last_name}</td>
-                      <td>{p.institute_name}</td>
                       <td>
-                        <small>{p.start_date} → {p.end_date}</small>
+                        {p.manager_first} {p.manager_last}
+                      </td>
+                      <td>{p.institute}</td>
+                      <td>
+                        <small>
+                          {p.start_date.toDateString()} →{" "}
+                          {p.end_date.toDateString()}
+                        </small>
                       </td>
                       <td>
                         <ul className="mb-0 small">
-                          {fields.filter((f) => f.project_id === p.id).map((f) => (
-                            <li key={f.field_name}>{f.field_name}</li>
+                          {p.fields && p.fields.map((f) => (
+                            <li key={f}>{f}</li>
                           ))}
                         </ul>
                       </td>
@@ -122,6 +158,15 @@ export default function ProjectsPage() {
                         >
                           Edit
                         </Button>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => {
+                            handleDeleteProject(p.name);
+                          }}
+                          disabled={loading}
+                          className="ms-2"
+                        >Delete</Button>
                       </td>
                     </tr>
                   ))}
@@ -135,7 +180,6 @@ export default function ProjectsPage() {
           show={showEditModal}
           onHide={() => setShowEditModal(false)}
           selectedProject={selectedProject}
-          fields={fields}
           onRefresh={fetchProjects}
         />
 
