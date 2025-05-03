@@ -10,7 +10,7 @@ type Post = {
   social_name: string;
   text: string;
   city?: string;
-  state?: string;
+  region?: string;
   country?: string;
   likes?: number;
   dislikes?: number;
@@ -30,24 +30,21 @@ export default function PostsPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
   const [usernamesForPlatform, setUsernamesForPlatform] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // TODO: Replace with real GET /api/posts
-    setPosts([
-      {
-        datetime: "2025-05-01T12:00:00",
-        username: "user123",
-        social_name: "Facebook",
-        text: "This is a mock post for Facebook.",
-        has_multimedia: false,
-        likes: 12,
-        dislikes: 2,
-        city: "Dallas",
-        state: "TX",
-        country: "USA",
-      },
-    ]);
-
+  const [saving, setSaving] = useState(false);
+  
+  const fetchPosts = async () => {
+    // Load posts
+    fetch("/api/posts")
+      .then((res) => res.json())
+      .then((data: Post[]) => {
+        setPosts(data);
+      })
+      .catch((error) => {
+        setError("Failed to load posts: " + error.message);
+      });
+  };
+  
+  const fetchUsers = async () => {
     // Load users for dropdown
     fetch("/api/users")
       .then((res) => res.json())
@@ -61,6 +58,11 @@ export default function PostsPage() {
       .catch((error) => {
         setError("Failed to load users: " + error.message);
       });
+  };
+
+  useEffect(() => {
+    fetchPosts();
+    fetchUsers();
   }, []);
 
   const handlePlatformChange = (platform: string) => {
@@ -72,10 +74,48 @@ export default function PostsPage() {
     setUsernamesForPlatform(usernames);
   };
 
-  const handleNewPostSubmit = (e: React.FormEvent) => {
+  const handleNewPostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
+    setError(null);
+    
     console.log("Submitting post:", newPost);
     // TODO: Send post to backend endpoint (POST /api/posts)
+  
+    try {
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPost),
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          // Extract zod-formatted errors into a readable string
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || `Failed to submit post: ${res.status}`);
+      }
+  
+      setNewPost({});
+      await fetchPosts();
+    } catch (err: any) {
+      setError(`Could not submit post: ${err.message || "Unknown error"}`);
+      console.error("Submit post error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -141,6 +181,7 @@ export default function PostsPage() {
               <Form.Label>Date/Time Posted</Form.Label>
               <Form.Control
                 type="datetime-local"
+                step="1"
                 required
                 onChange={(e) =>
                   setNewPost({ ...newPost, datetime: e.target.value })
@@ -166,7 +207,7 @@ export default function PostsPage() {
                   <Form.Control
                     type="text"
                     onChange={(e) =>
-                      setNewPost({ ...newPost, state: e.target.value })
+                      setNewPost({ ...newPost, region: e.target.value })
                     }
                   />
                 </Form.Group>
@@ -263,7 +304,7 @@ export default function PostsPage() {
                   <td>{post.username}</td>
                   <td>{new Date(post.datetime).toLocaleString()}</td>
                   <td>
-                    {[post.city, post.state, post.country]
+                    {[post.city, post.region, post.country]
                       .filter(Boolean)
                       .join(", ")}
                   </td>
