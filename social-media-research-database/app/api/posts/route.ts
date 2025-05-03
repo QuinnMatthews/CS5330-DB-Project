@@ -27,11 +27,70 @@ const postIdentitySchema = z.object({
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
 });
 
-// GET all posts
-export async function GET() {
+const querySchema = z.object({
+  social_name: z.string().max(100).optional(),
+  username: z.string().max(100).optional(),
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional(),
+  first_name: z.string().max(50).optional(),
+  last_name: z.string().max(50).optional(),
+});
+
+
+// GET all posts w/ optional filters
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+
+  const queryParams = Object.fromEntries(searchParams.entries());
+
+  const result = querySchema.safeParse(queryParams);
+
+  if (!result.success) {
+    return NextResponse.json({ error: "Invalid query parameters", details: result.error.errors }, { status: 400 });
+  }
+
+  const { social_name, username, start, end, first_name, last_name } = result.data;
+
+
+  let query = `
+    SELECT post.* FROM post
+    JOIN user ON post.username = user.username AND post.social_name = user.social_name
+    WHERE 1=1
+  `;
+  const params: any[] = [];
+
+  if (social_name) {
+    query += " AND post.social_name = ?";
+    params.push(social_name);
+  }
+
+  if (username) {
+    query += " AND post.username = ?";
+    params.push(username);
+  }
+
+  if (start) {
+    query += " AND post.datetime >= ?";
+    params.push(start);
+  }
+
+  if (end) {
+    query += " AND post.datetime <= ?";
+    params.push(end);
+  }
+
+  if (first_name) {
+    query += " AND user.first_name = ?";
+    params.push(first_name);
+  }
+
+  if (last_name) {
+    query += " AND user.last_name = ?";
+    params.push(last_name);
+  }
+
   try {
-    const query = `SELECT * FROM post`;
-    const results = await queryDB(query);
+    const results = await queryDB(query, params);
     return NextResponse.json(results);
   } catch (err: any) {
     console.error("ERROR: API -", err.message);
