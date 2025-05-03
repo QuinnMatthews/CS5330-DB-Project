@@ -27,11 +27,56 @@ const postIdentitySchema = z.object({
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
 });
 
-// GET all posts
-export async function GET() {
+// GET all posts w/ optional filters
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+
+  const socialName = searchParams.get("social_name");
+  const username = searchParams.get("username");
+  const startDate = searchParams.get("start");
+  const endDate = searchParams.get("end");
+  const firstName = searchParams.get("first_name");
+  const lastName = searchParams.get("last_name");
+
+  let query = `
+    SELECT post.* FROM post
+    JOIN user ON post.username = user.username AND post.social_name = user.social_name
+    WHERE 1=1
+  `;
+  const params: any[] = [];
+
+  if (socialName) {
+    query += " AND post.social_name = ?";
+    params.push(socialName);
+  }
+
+  if (username) {
+    query += " AND post.username = ?";
+    params.push(username);
+  }
+
+  if (startDate) {
+    query += " AND post.datetime >= ?";
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    query += " AND post.datetime <= ?";
+    params.push(endDate);
+  }
+
+  if (firstName) {
+    query += " AND user.first_name = ?";
+    params.push(firstName);
+  }
+
+  if (lastName) {
+    query += " AND user.last_name = ?";
+    params.push(lastName);
+  }
+
   try {
-    const query = `SELECT * FROM post`;
-    const results = await queryDB(query);
+    const results = await queryDB(query, params);
     return NextResponse.json(results);
   } catch (err: any) {
     console.error("ERROR: API -", err.message);
