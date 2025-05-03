@@ -79,8 +79,12 @@ export default function SearchPostsPage() {
       }
       const data = await res.json();
       setPosts(data);
-    } catch (err: any) {
-      setError("Failed to fetch posts: " + err.message);
+    }  catch (err: unknown) {
+      if (err && typeof err === "object" && "message" in err && typeof (err as any).message === "string") {
+        setError("Failed to fetch posts: " + (err as any).message);
+      } else {
+        setError("Failed to fetch posts: An unknown error occurred");
+      }
     }
   };
 
@@ -95,6 +99,7 @@ export default function SearchPostsPage() {
       {/* Filters Form */}
       <Row className="mb-4">
         <Col md={10}>
+
           <Form>
             <Row className="mb-3">
               <Col md={3}>

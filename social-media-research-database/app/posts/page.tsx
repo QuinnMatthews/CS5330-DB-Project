@@ -1,3 +1,4 @@
+// posts/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -31,33 +32,34 @@ export default function PostsPage() {
   const [usernamesForPlatform, setUsernamesForPlatform] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  
-  const fetchPosts = async () => {
-    // Load posts
-    fetch("/api/posts")
+
+  // Filters
+  const [filters, setFilters] = useState({
+    social_name: "",
+    username: "",
+    start_date: "",
+    end_date: "",
+    first_name: "",
+    last_name: "",
+  });
+
+  const fetchPosts = async (query = "") => {
+    fetch(`/api/posts${query}`)
       .then((res) => res.json())
-      .then((data: Post[]) => {
-        setPosts(data);
-      })
-      .catch((error) => {
-        setError("Failed to load posts: " + error.message);
-      });
+      .then((data: Post[]) => setPosts(data))
+      .catch((error) => setError("Failed to load posts: " + error.message));
   };
-  
+
   const fetchUsers = async () => {
     // Load users for dropdown
     fetch("/api/users")
       .then((res) => res.json())
       .then((data: User[]) => {
         setUsers(data);
-        const platformList = Array.from(
-          new Set(data.map((u) => u.social_name))
-        );
-        setPlatforms(platformList);
+        const uniquePlatforms = Array.from(new Set(data.map((u) => u.social_name)));
+        setPlatforms(uniquePlatforms);
       })
-      .catch((error) => {
-        setError("Failed to load users: " + error.message);
-      });
+      .catch((error) => setError("Failed to load users: " + error.message));
   };
 
   useEffect(() => {
@@ -68,9 +70,7 @@ export default function PostsPage() {
   const handlePlatformChange = (platform: string) => {
     setSelectedPlatform(platform);
     setNewPost({ ...newPost, social_name: platform, username: "" });
-    const usernames = users
-      .filter((u) => u.social_name === platform)
-      .map((u) => u.username);
+    const usernames = users.filter((u) => u.social_name === platform).map((u) => u.username);
     setUsernamesForPlatform(usernames);
   };
 
@@ -78,36 +78,24 @@ export default function PostsPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
-    
-    console.log("Submitting post:", newPost);
-    // TODO: Send post to backend endpoint (POST /api/posts)
-  
+
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPost),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-  
-        if (errorData?.details) {
-          // Extract zod-formatted errors into a readable string
-          const messages = Object.entries(errorData.details)
-            .map(([field, issue]: any) => {
-              const msg = issue?._errors?.[0];
-              return msg ? `${field}: ${msg}` : null;
-            })
-            .filter(Boolean)
-            .join("; ");
-  
-          throw new Error(messages || "Invalid input.");
-        }
-  
-        throw new Error(errorData.error || `Failed to submit post: ${res.status}`);
+        const messages = Object.entries(errorData.details || {})
+          .map(([field, issue]: any) => issue?._errors?.[0] && `${field}: ${issue._errors[0]}`)
+          .filter(Boolean)
+          .join("; ");
+
+        throw new Error(messages || errorData.error || `Failed to submit post`);
       }
-  
+
       setNewPost({});
       await fetchPosts();
     } catch (err: any) {
@@ -117,6 +105,26 @@ export default function PostsPage() {
       setSaving(false);
     }
   };
+
+  const handleFilterSearch = () => {
+    setError(null);
+    const query = new URLSearchParams();
+    if (filters.social_name) query.append("social_name", filters.social_name);
+    if (filters.username) query.append("username", filters.username);
+    if (filters.start_date) query.append("start", filters.start_date);
+    if (filters.end_date) query.append("end", filters.end_date);
+    if (filters.first_name) query.append("first_name", filters.first_name);
+    if (filters.last_name) query.append("last_name", filters.last_name);
+    fetchPosts("?" + query.toString());
+  };
+
+  // Update filtered usernames when platform filter changes
+  useEffect(() => {
+    const usernames = users
+      .filter((u) => u.social_name === filters.social_name)
+      .map((u) => u.username);
+    setUsernamesForPlatform(usernames);
+  }, [filters.social_name, users]);
 
   return (
     <Container fluid>
@@ -277,44 +285,143 @@ export default function PostsPage() {
       {/* Error Message */}
       {error && <div className="alert alert-danger">{error}</div>}
 
+      {/* Filters Section */}
+      <Row className="mb-4">
+        <Col md={10}>
+          <h5>Filter Existing Posts</h5>
+          <Form>
+            <Row className="mb-3">
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Platform</Form.Label>
+                  <Form.Select
+                    value={filters.social_name}
+                    onChange={(e) =>
+                      setFilters((f) => ({ ...f, social_name: e.target.value, username: "" }))
+                    }
+                  >
+                    <option value="">All platforms</option>
+                    {platforms.map((platform) => (
+                      <option key={platform} value={platform}>
+                        {platform}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Username</Form.Label>
+                  <Form.Select
+                    value={filters.username}
+                    onChange={(e) => setFilters((f) => ({ ...f, username: e.target.value }))}
+                    disabled={!filters.social_name}
+                  >
+                    <option value="">All users</option>
+                    {usernamesForPlatform.map((username) => (
+                      <option key={username} value={username}>
+                        {username}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>First Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., Alice"
+                    value={filters.first_name}
+                    onChange={(e) => setFilters((f) => ({ ...f, first_name: e.target.value }))}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Last Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="e.g., Smith"
+                    value={filters.last_name}
+                    onChange={(e) => setFilters((f) => ({ ...f, last_name: e.target.value }))}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={2}>
+                <Form.Group>
+                  <Form.Label>Start Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={filters.start_date}
+                    onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={2}>
+                <Form.Group>
+                  <Form.Label>End Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={filters.end_date}
+                    onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Button variant="primary" onClick={handleFilterSearch}>
+              Search
+            </Button>
+          </Form>
+        </Col>
+      </Row>
+
       {/* Posts Table */}
       <Row>
         <Col>
           <h4 className="mb-3">Existing Posts</h4>
-          <Table bordered hover responsive>
-            <thead className="table-dark">
-              <tr>
-                <th>Text</th>
-                <th>Platform</th>
-                <th>Username</th>
-                <th>Time</th>
-                <th>Location</th>
-                <th>Likes</th>
-                <th>Dislikes</th>
-                <th>Multimedia</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.map((post, index) => (
-                <tr
-                  key={`${post.username}-${post.social_name}-${post.datetime}-${index}`}
-                >
-                  <td>{post.text.length > 50 ? `${post.text.slice(0, 50)}...` : post.text}</td>
-                  <td>{post.social_name}</td>
-                  <td>{post.username}</td>
-                  <td>{new Date(post.datetime).toLocaleString()}</td>
-                  <td>
-                    {[post.city, post.region, post.country]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </td>
-                  <td>{post.likes ?? 0}</td>
-                  <td>{post.dislikes ?? 0}</td>
-                  <td>{post.has_multimedia ? "✔️" : "❌"}</td>
+          {posts.length === 0 ? (
+            <p>No posts found.</p>
+          ) : (
+            <Table bordered hover responsive>
+              <thead className="table-dark">
+                <tr>
+                  <th>Text</th>
+                  <th>Platform</th>
+                  <th>Username</th>
+                  <th>Time</th>
+                  <th>Location</th>
+                  <th>Likes</th>
+                  <th>Dislikes</th>
+                  <th>Multimedia</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {posts.map((post, index) => (
+                  <tr
+                    key={`${post.username}-${post.social_name}-${post.datetime}-${index}`}
+                  >
+                    <td>{post.text.length > 50 ? `${post.text.slice(0, 50)}...` : post.text}</td>
+                    <td>{post.social_name}</td>
+                    <td>{post.username}</td>
+                    <td>{new Date(post.datetime).toLocaleString()}</td>
+                    <td>
+                      {[post.city, post.region, post.country].filter(Boolean).join(", ")}
+                    </td>
+                    <td>{post.likes ?? 0}</td>
+                    <td>{post.dislikes ?? 0}</td>
+                    <td>{post.has_multimedia ? "✔️" : "❌"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
         </Col>
       </Row>
     </Container>
