@@ -15,6 +15,7 @@ const userSchema = z.object({
   gender: z.string().max(10, "Gender is too long").optional(),
   birth_country: z.string().max(50, "Birth country is too long").optional(),
   residence_country: z.string().max(50, "Residence country is too long").optional(),
+  verified: z.coerce.boolean(),
 });
 
 // Used for deletion and identifying rows
@@ -45,12 +46,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { username, social_name, first_name, last_name, birthdate, gender, birth_country, residence_country } =
+    const { username, social_name, first_name, last_name, birthdate, gender, birth_country, residence_country, verified } =
       parseResult.data;
 
     const query = `
-      INSERT INTO user (username, social_name, first_name, last_name, birthdate, gender, birth_country, residence_country)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO user (username, social_name, first_name, last_name, birthdate, gender, birth_country, residence_country, verified)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const result = await queryDB(query, [
       username,
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
       gender || null,
       birth_country || null,
       residence_country || null,
+      verified,
     ]);
     return NextResponse.json(result);
   } catch (err: any) {
@@ -79,12 +81,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { first_name, last_name, birthdate, gender, birth_country, residence_country, username, social_name } =
+    const { first_name, last_name, birthdate, gender, birth_country, residence_country, username, social_name, verified } =
       parseResult.data;
 
     const query = `
       UPDATE user
-      SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, birth_country = ?, residence_country = ?
+      SET first_name = ?, last_name = ?, birthdate = ?, gender = ?, birth_country = ?, residence_country = ?, verified = ?
       WHERE username = ? AND social_name = ?
     `;
     const result = await queryDB(query, [
@@ -96,6 +98,7 @@ export async function PATCH(request: NextRequest) {
       residence_country,
       username,
       social_name,
+      verified,
     ]);
     return NextResponse.json(result);
   } catch (err: any) {
