@@ -33,7 +33,11 @@ export async function DELETE(request: NextRequest, context: { params: { project_
     const params = await context.params;
     const projectName = params.project_name;
     const body = await request.json();
-    const field_name = body.field_name;
+    const parseResult = fieldSchema.safeParse(body);
+    if (!parseResult.success) {
+        return NextResponse.json({ error: "Invalid input", details: parseResult.error.format() }, { status: 400 });
+    }
+    const field_name = parseResult.data.field_name;
 
     try {
         const query = `DELETE FROM field WHERE project_name = ? AND name = ?`;
