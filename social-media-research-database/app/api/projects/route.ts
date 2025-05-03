@@ -1,7 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { queryDB } from "@/app/api/utils";
 import { z } from "zod";
-import { Project } from "@/app/projects/types";
 
 export const projectSchema = z.object({
     name: z
@@ -63,9 +62,11 @@ export async function GET() {
       GROUP BY p.name;
     `;
         const results = await queryDB(query);
-
         // clean up results to remove null fields
-        const cleanedResults = results.map((r: Project) => ({ ...r, fields: r.fields?.filter(Boolean) }));
+        const cleanedResults = (results as any[]).map((r) => {
+            const parsed = typeof r.fields === "string" ? JSON.parse(r.fields) : r.fields;
+            return { ...r, fields: (parsed ?? []).filter(Boolean) };
+        });
 
         return NextResponse.json(cleanedResults);
     } catch (err: any) {
