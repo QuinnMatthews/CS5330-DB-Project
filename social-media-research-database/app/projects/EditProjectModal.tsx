@@ -11,16 +11,20 @@ type Props = {
   onRefresh: () => void;
 };
 
+const formatDate = (d: unknown) =>
+  d instanceof Date && !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : "";
+
 export default function EditProjectModal({
   show,
   onHide,
   selectedProject,
   onRefresh,
 }: Props) {
-  const [projectForm, setProjectForm] = useState<Partial<Project>>({});
+  const [projectForm, setProjectForm] = useState<Project | undefined>(undefined);
   const [newField, setNewField] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedProject) {
@@ -30,7 +34,7 @@ export default function EditProjectModal({
 
   const handleProjectUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject) return;
+    if (!projectForm) return;
     setSubmitting(true);
     try {
       await fetch(`/api/projects`, {
@@ -39,6 +43,8 @@ export default function EditProjectModal({
         body: JSON.stringify(projectForm),
       });
       onRefresh();
+      setError(null);
+      onHide();
     } catch (err) {
       console.error("Failed to update project", err);
       setError(err instanceof Error ? err.message : "Failed to update project");
@@ -49,32 +55,48 @@ export default function EditProjectModal({
 
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject || !newField.trim()) return;
+    if (!projectForm || !newField.trim()) return;
     setSubmitting(true);
     try {
-      await fetch(
-        `/api/projects/${encodeURIComponent(selectedProject.name)}/fields`,
+      const res = await fetch(
+        `/api/projects/${encodeURIComponent(projectForm.name)}/fields`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ field_name: newField.trim() }),
         }
       );
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+
+        if(errorData.details.field_name._errors) {
+          throw new Error(`Field creation failed: ${errorData.details.field_name._errors[0]}`);
+        }
+
+        throw new Error(`Field creation failed: ${errorData.error || "Unknown error"}`);
+      }
+
+      setProjectForm((prev) => ({
+        ...prev!,
+        fields: [...(prev!.fields || []), newField.trim()],
+      }));
+
       setNewField("");
       onRefresh();
     } catch (err) {
       console.error("Failed to add field", err);
-      setError(err instanceof Error ? err.message : "Failed to add field");
+      setFieldError(err instanceof Error ? err.message : "Failed to add field");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDeleteField = async (fieldName: string) => {
-    if (!selectedProject) return;
+    if (!projectForm) return;
     try {
       await fetch(
-        `/api/projects/${encodeURIComponent(selectedProject.name)}/fields`,
+        `/api/projects/${encodeURIComponent(projectForm.name)}/fields`,
         {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -82,9 +104,15 @@ export default function EditProjectModal({
         }
       );
       onRefresh();
+      setFieldError(null);
+      setNewField("");
+      setProjectForm((prev) => ({
+        ...prev!,
+        fields: prev!.fields!.filter((f) => f!== fieldName),
+      }));
     } catch (err) {
       console.error("Failed to delete field", err);
-      setError(err instanceof Error ? err.message : "Failed to delete field");
+      setFieldError(err instanceof Error ? err.message : "Failed to delete field");
     }
   };
 
@@ -94,7 +122,7 @@ export default function EditProjectModal({
         <Modal.Title>Edit Project</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {selectedProject && (
+        {projectForm && (
           <>
             <h3>{projectForm.name}</h3>
             <Form onSubmit={handleProjectUpdate} className="mb-4">
@@ -150,7 +178,7 @@ export default function EditProjectModal({
                     <Form.Label>Start Date</Form.Label>
                     <Form.Control
                       type="date"
-                      value={projectForm.start_date?.toISOString().split('T')[0] || ""}
+                      value={formatDate(projectForm.start_date)}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
@@ -165,7 +193,7 @@ export default function EditProjectModal({
                     <Form.Label>End Date</Form.Label>
                     <Form.Control
                       type="date"
-                      value={projectForm.end_date?.toISOString().split('T')[0] || ""}
+                      value={formatDate(projectForm.end_date)}
                       onChange={(e) =>
                         setProjectForm({
                           ...projectForm,
@@ -177,8 +205,8 @@ export default function EditProjectModal({
                 </Col>
               </Row>
               {error && <div className="alert alert-danger">{error}</div>}
-              <Button type="submit" variant="primary" disabled={submitting}>
-                Save Changes
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Saving..." : "Save Changes"}
               </Button>
             </Form>
 
@@ -202,7 +230,7 @@ export default function EditProjectModal({
                 </Col>
               </Row>
             </Form>
-
+            {fieldError && <div className="alert alert-danger">{fieldError}</div>}
             <table className="table">
               <thead>
                 <tr>
@@ -211,7 +239,7 @@ export default function EditProjectModal({
                 </tr>
               </thead>
               <tbody>
-                {selectedProject.fields.map((f) => (
+                {projectForm.fields.map((f) => (
                   <tr key={f} className="">
                     <td>{f}</td>
                     <td className="p-2">
@@ -225,7 +253,7 @@ export default function EditProjectModal({
                     </td>
                   </tr>
                 ))}
-                {selectedProject.fields.length === 0 && (
+                {projectForm.fields.length === 0 && (
                   <tr>
                     <td colSpan={2} className="text-center text-muted">
                       No fields added yet.

@@ -1,47 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
+import { queryDB } from "@/app/api/utils";
+import { z } from "zod";
+import { Project } from "@/app/projects/types";
 
-// In-memory mock store
-let mockFields: { project_name: string; field_name: string }[] = [
-    { project_name: "Election Study", field_name: "Political Leaning" },
-    { project_name: "Election Study", field_name: "Sentiment" },
-    { project_name: "Health Sentiment", field_name: "Emotion" },
-];
-
-// Helper to decode project name from params
-function getProjectNameFromRequest(request: NextRequest): string {
-    const urlParts = request.url.split("/");
-    const idx = urlParts.findIndex((part) => part === "projects");
-    return decodeURIComponent(urlParts[idx + 1]);
-}
-
-// GET
-export async function GET(_: NextRequest, context: { params: { project_name: string } }) {
-    const params = await context.params;
-    const projectName = params.project_name;
-
-    const result = mockFields.filter((f) => f.project_name === projectName);
-    return NextResponse.json(result);
-}
+export const fieldSchema = z.object({
+    field_name: z.string().min(1).max(100),
+});
 
 // POST
 export async function POST(request: NextRequest, context: { params: { project_name: string } }) {
-    const { field_name } = await request.json();
     const params = await context.params;
     const projectName = params.project_name;
+    const body = await request.json();
+    const parseResult = fieldSchema.safeParse(body);
+    if (!parseResult.success) {
+        return NextResponse.json({ error: "Invalid input", details: parseResult.error.format() }, { status: 400 });
+    }
 
-    mockFields.push({ project_name: projectName, field_name });
-    return NextResponse.json({ success: true });
+
+    try {
+    const query = `INSERT INTO field (project_name, name) VALUES (?,?)`;
+        const results = await queryDB(query, [projectName, parseResult.data.field_name]);
+        return NextResponse.json(results);
+    } catch (err: any) {
+        console.error("ERROR: API -", err.message);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
 }
 
 // DELETE
 export async function DELETE(request: NextRequest, context: { params: { project_name: string } }) {
-    const { field_name } = await request.json();
     const params = await context.params;
     const projectName = params.project_name;
+    const body = await request.json();
+    const field_name = body.field_name;
 
-    mockFields = mockFields.filter(
-        (f) => !(f.project_name === projectName && f.field_name === field_name)
-    );
-    return NextResponse.json({ success: true });
+    try {
+        const query = `DELETE FROM field WHERE project_name = ? AND name = ?`;
+        const results = await queryDB(query, [projectName, field_name]);
+        return NextResponse.json(results);
+    } catch (err: any) {
+        console.error("ERROR: API -", err.message);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
 }
 
