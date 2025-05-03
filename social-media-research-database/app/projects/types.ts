@@ -1,14 +1,14 @@
 export type Project = {
-  id: number;
   name: string;
-  manager_first_name: string;
-  manager_last_name: string;
-  institute_name: string;
-  start_date: string; // format: 'YYYY-MM-DD'
-  end_date: string;   // format: 'YYYY-MM-DD'
+  manager_first: string;
+  manager_last: string;
+  institute: string;
+  start_date: Date;
+  end_date: Date;
+  fields: string[];
 };
 
 export type Field = {
-  project_id: number;
-  field_name: string;
+  project_name: string;
+  name: string;
 };

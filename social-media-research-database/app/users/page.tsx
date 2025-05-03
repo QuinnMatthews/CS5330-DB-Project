@@ -76,7 +76,7 @@ export default function UsersPage() {
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(
-          errorData.message ||
+          errorData.error ||
             `Failed to add user: ${res.status} ${res.statusText}`
         );
       }
