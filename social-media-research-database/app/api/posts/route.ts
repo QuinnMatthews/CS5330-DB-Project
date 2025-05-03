@@ -27,16 +27,30 @@ const postIdentitySchema = z.object({
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
 });
 
+const querySchema = z.object({
+  social_name: z.string().max(100).optional(),
+  username: z.string().max(100).optional(),
+  start: z.string().datetime().optional(),
+  end: z.string().datetime().optional(),
+  first_name: z.string().max(50).optional(),
+  last_name: z.string().max(50).optional(),
+});
+
+
 // GET all posts w/ optional filters
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
 
-  const socialName = searchParams.get("social_name");
-  const username = searchParams.get("username");
-  const startDate = searchParams.get("start");
-  const endDate = searchParams.get("end");
-  const firstName = searchParams.get("first_name");
-  const lastName = searchParams.get("last_name");
+  const queryParams = Object.fromEntries(searchParams.entries());
+
+  const result = querySchema.safeParse(queryParams);
+
+  if (!result.success) {
+    return NextResponse.json({ error: "Invalid query parameters", details: result.error.errors }, { status: 400 });
+  }
+
+  const { social_name, username, start, end, first_name, last_name } = result.data;
+
 
   let query = `
     SELECT post.* FROM post
@@ -45,9 +59,9 @@ export async function GET(request: NextRequest) {
   `;
   const params: any[] = [];
 
-  if (socialName) {
+  if (social_name) {
     query += " AND post.social_name = ?";
-    params.push(socialName);
+    params.push(social_name);
   }
 
   if (username) {
@@ -55,24 +69,24 @@ export async function GET(request: NextRequest) {
     params.push(username);
   }
 
-  if (startDate) {
+  if (start) {
     query += " AND post.datetime >= ?";
-    params.push(startDate);
+    params.push(start);
   }
 
-  if (endDate) {
+  if (end) {
     query += " AND post.datetime <= ?";
-    params.push(endDate);
+    params.push(end);
   }
 
-  if (firstName) {
+  if (first_name) {
     query += " AND user.first_name = ?";
-    params.push(firstName);
+    params.push(first_name);
   }
 
-  if (lastName) {
+  if (last_name) {
     query += " AND user.last_name = ?";
-    params.push(lastName);
+    params.push(last_name);
   }
 
   try {

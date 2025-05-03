@@ -31,8 +31,8 @@ export default function SearchPostsPage() {
   const [filters, setFilters] = useState({
     social_name: "",
     username: "",
-    start_date: "",
-    end_date: "",
+    start: "",
+    end: "",
     first_name: "",
     last_name: "",
   });
@@ -64,8 +64,16 @@ export default function SearchPostsPage() {
     const queryParams = new URLSearchParams();
     if (filters.social_name) queryParams.append("social_name", filters.social_name);
     if (filters.username) queryParams.append("username", filters.username);
-    if (filters.start_date) queryParams.append("start", filters.start_date);
-    if (filters.end_date) queryParams.append("end", filters.end_date);
+    if (filters.start) {
+      const start = new Date(filters.start);
+      queryParams.append("start", start.toISOString());
+    }
+    if (filters.end) {
+      const end = new Date(filters.end);
+      // Includes the end date
+      end.setHours(23, 59, 59, 999);
+      queryParams.append("end", end.toISOString());
+    }
     if (filters.first_name) queryParams.append("first_name", filters.first_name);
     if (filters.last_name) queryParams.append("last_name", filters.last_name);
 
@@ -85,7 +93,8 @@ export default function SearchPostsPage() {
       } else {
         setError("Failed to fetch posts: An unknown error occurred");
       }
-  };
+    };
+  }
 
   return (
     <Container fluid>
@@ -143,7 +152,7 @@ export default function SearchPostsPage() {
                   <Form.Label>First Name</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="e.g., Alice"
+                    placeholder="e.g., John"
                     value={filters.first_name}
                     onChange={(e) => setFilters((f) => ({ ...f, first_name: e.target.value }))}
                   />
@@ -155,7 +164,7 @@ export default function SearchPostsPage() {
                   <Form.Label>Last Name</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="e.g., Smith"
+                    placeholder="e.g., Doe"
                     value={filters.last_name}
                     onChange={(e) => setFilters((f) => ({ ...f, last_name: e.target.value }))}
                   />
@@ -169,8 +178,8 @@ export default function SearchPostsPage() {
                   <Form.Label>Start Date</Form.Label>
                   <Form.Control
                     type="date"
-                    value={filters.start_date}
-                    onChange={(e) => setFilters((f) => ({ ...f, start_date: e.target.value }))}
+                    value={filters.start}
+                    onChange={(e) => setFilters((f) => ({ ...f, start: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
@@ -180,8 +189,8 @@ export default function SearchPostsPage() {
                   <Form.Label>End Date</Form.Label>
                   <Form.Control
                     type="date"
-                    value={filters.end_date}
-                    onChange={(e) => setFilters((f) => ({ ...f, end_date: e.target.value }))}
+                    value={filters.end}
+                    onChange={(e) => setFilters((f) => ({ ...f, end: e.target.value }))}
                   />
                 </Form.Group>
               </Col>
