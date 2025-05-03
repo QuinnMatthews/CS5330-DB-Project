@@ -40,6 +40,7 @@ export default function UsersPage() {
           gender: u.gender,
           birth_country: u.birth_country,
           residence_country: u.residence_country,
+          verified: u.verified,
         }))
       );
     } catch (err) {
@@ -301,9 +302,9 @@ export default function UsersPage() {
                   }
                 >
                   <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
                 </Form.Select>
               </Form.Group>
 
@@ -332,6 +333,19 @@ export default function UsersPage() {
                   }
                 />
               </Form.Group>
+              
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Verified"
+                checked={editingUser.verified}
+                onChange={(e) =>
+                  setEditingUser({
+                      ...editingUser,
+                      verified: e.target.checked,
+                    })
+                }
+              />
+            </Form.Group>
             </>
           )}
         </Modal.Body>

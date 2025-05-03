@@ -7,4 +7,5 @@ export type User = {
   gender?: string;
   birth_country?: string;
   residence_country?: string;
+  verified: boolean;
 };
