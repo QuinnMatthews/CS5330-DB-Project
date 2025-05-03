@@ -60,24 +60,24 @@ export default function ProjectsPage() {
 
   const handleDeleteProject = async (projectName: string) => {
     try {
-      const res = await fetch(`/api/projects`, {
+      setLoading(true);                // show spinner / disable buttons
+      const res = await fetch("/api/projects", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: projectName }),
       });
-
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(
           errorData.error || `HTTP Error: ${res.status} ${res.statusText}`
         );
       }
-
-      fetchProjects();
-      
+      await fetchProjects();           // wait for state refresh
     } catch (err: any) {
       console.error(err);
       setError(`Could not delete project: ${err.message || "Unknown error"}`);
+    } finally {
+      setLoading(false);               // always reset
     }
   };
 
