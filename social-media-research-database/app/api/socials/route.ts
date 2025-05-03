@@ -1,85 +1,77 @@
-import { NextResponse, NextRequest } from 'next/server'
-import mysql from 'mysql2/promise';
-import { GetDBSettings, IDBSettings } from '@/database'
+import { NextResponse, NextRequest } from "next/server";
+import { z } from "zod";
+import { queryDB } from "@/app/api/utils";
 
-let connectionParams = GetDBSettings()
+// Validation Schemas
+const socialSchema = z.object({
+  name: z
+    .string({ required_error: "Platform name is required" })
+    .min(1, "Platform name is required")
+    .max(100, "Platform name should not exceed 100 characters")
+    .describe("Social Platform Name"),
+});
 
+const deleteSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Platform name is required for deletion")
+    .max(100, "Platform name should not exceed 100 characters"),
+});
 
-export async function GET(request: Request) {
+// GET all social platforms
+export async function GET() {
   try {
-    // Connect to the database
-    const connection = await mysql.createConnection(connectionParams)
-
-    // Create a query to fetch data
-    let get_exp_query = 'SELECT * FROM social'
-    let values: any[] = []
-
-    // Execute the query
-    const [results] = await connection.execute(get_exp_query, values)
-
-    // Close the database connection
-    connection.end()
-
-    // return the results as a JSON API response
-    return NextResponse.json(results)
-
-  } catch (err) {
-    console.log('ERROR: API - ', (err as Error).message)
-
-    const response = {
-      error: (err as Error).message,
-
-      returnedStatus: 500,
-    }
-
-    return NextResponse.json(response, { status: 500 })
+    const query = `SELECT * FROM social`;
+    const results = await queryDB(query);
+    return NextResponse.json(results);
+  } catch (err: any) {
+    console.error("ERROR: API -", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
+// POST new social platform
 export async function POST(request: NextRequest) {
-  const body = await request.json()
+  const body = await request.json();
+  const parseResult = socialSchema.safeParse(body);
+
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: "Invalid input", details: parseResult.error.format() },
+      { status: 400 }
+    );
+  }
 
   try {
-    // Connect to the database
-    const connection = await mysql.createConnection(connectionParams)
-    const new_exp_query = 'INSERT INTO social (name) VALUES (?)'
-
-    // Execute the query
-    const result = await connection.execute(new_exp_query, [body.name])
-    // Close the database connection
-    connection.end()
-    // return the results as a JSON API response
-    return NextResponse.json(result)
-  } catch (err) {
-    console.log('ERROR: API - ', (err as Error).message)
-    const response = {
-      error: (err as Error).message,
-      returnedStatus: 500,
-    }
-    return NextResponse.json(response, { status: 500 })
+    const { name } = parseResult.data;
+    const query = `INSERT INTO social (name) VALUES (?)`;
+    const result = await queryDB(query, [name]);
+    return NextResponse.json(result);
+  } catch (err: any) {
+    console.error("ERROR: API -", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
+// DELETE a social platform
 export async function DELETE(request: NextRequest) {
   const body = await request.json();
-  const social_name = body.name;
+  const parseResult = deleteSchema.safeParse(body);
 
-  let connection;
+  if (!parseResult.success) {
+    return NextResponse.json(
+      { error: "Invalid input", details: parseResult.error.format() },
+      { status: 400 }
+    );
+  }
+
   try {
-    connection = await mysql.createConnection(connectionParams)
-    const delete_exp_query = 'DELETE FROM social WHERE name = ?'
-    const result = await connection.execute(delete_exp_query, [social_name])
-    return NextResponse.json(result)
-  } catch (err) {
-    console.log('ERROR: API - ', (err as Error).message)
-    const response = {
-      error: (err as Error).message,
-      returnedStatus: 500,
-    }
-    return NextResponse.json(response, { status: 500 })
-  } finally {
-    if (connection) {
-      await connection.end();
-    }
+    const { name } = parseResult.data;
+    const query = `DELETE FROM social WHERE name = ?`;
+    const result = await queryDB(query, [name]);
+    return NextResponse.json(result);
+  } catch (err: any) {
+    console.error("ERROR: API -", err.message);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

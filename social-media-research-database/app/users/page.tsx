@@ -67,19 +67,34 @@ export default function UsersPage() {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
+  
     try {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
+  
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            `Failed to add user: ${res.status} ${res.statusText}`
-        );
+  
+        if (errorData?.details) {
+          // Extract zod-formatted errors into a readable string
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || `Failed to add user: ${res.status}`);
       }
+  
       setNewUser({});
       await fetchUsers();
     } catch (err: any) {
@@ -89,26 +104,47 @@ export default function UsersPage() {
       setSaving(false);
     }
   };
+  
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
     setSaving(true);
+    setError(null);
+  
     try {
       const res = await fetch("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingUser),
       });
-      if (!res.ok) throw new Error("Failed to update user.");
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || "Failed to update user.");
+      }
+  
       setEditingUser(null);
       await fetchUsers();
-    } catch {
-      setError("Could not update user.");
+    } catch (err: any) {
+      setError(`Could not update user: ${err.message || "Unknown error"}`);
     } finally {
       setSaving(false);
     }
   };
-
+  
   return (
     <Container>
       <Row className="mb-4">
