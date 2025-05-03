@@ -88,15 +88,23 @@ export default function AddProjectModal({ show, onHide, onRefresh }: Props) {
       }
 
       if (form.name && fields.length > 0) {
-        await Promise.all(
+        const fieldResults = await Promise.all(
           fields.map((field) =>
-            fetch(`/api/projects/${encodeURIComponent(form.name as string)}/fields`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ field_name: field }),
-            })
-          )
+            fetch(
+              `/api/projects/${encodeURIComponent(form.name as string)}/fields`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ field_name: field }),
+              },
+            ).then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => ({})) }))
+          ),
         );
+        const failed = fieldResults.find((r) => !r.ok);
+        if (failed) {
+          setGeneralError(failed.data?.error ?? "Failed to add one or more fields");
+          return;
+        }
       }
 
       setSuccessMessage("Project created successfully.");
