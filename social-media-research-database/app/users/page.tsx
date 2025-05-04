@@ -100,6 +100,7 @@ export default function UsersPage() {
   
       setNewUser({});
       await fetchUsers();
+      setEditingUser(newUser);
     } catch (err: any) {
       setError(`Could not add user: ${err.message || "Unknown error"}`);
       console.error("Add user error:", err);

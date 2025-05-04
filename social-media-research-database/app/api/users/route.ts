@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       gender || null,
       birth_country || null,
       residence_country || null,
-      verified,
+      verified || false,
     ]);
     return NextResponse.json(result);
   } catch (err: any) {
@@ -90,15 +90,15 @@ export async function PATCH(request: NextRequest) {
       WHERE username = ? AND social_name = ?
     `;
     const result = await queryDB(query, [
-      first_name,
-      last_name,
-      birthdate,
-      gender,
-      birth_country,
-      residence_country,
-      username,
-      social_name,
-      verified,
+      first_name || null,
+      last_name || null,
+      birthdate || null,
+      gender || null,
+      birth_country || null,
+      residence_country || null,
+      username || null,
+      social_name || null,
+      verified || false,
     ]);
     return NextResponse.json(result);
   } catch (err: any) {
