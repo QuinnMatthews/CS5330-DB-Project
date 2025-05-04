@@ -23,6 +23,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingName, setDeletingName] = useState<string | null>(null);
+  const [deletingSocial, setDeletingSocial] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -146,6 +148,50 @@ export default function UsersPage() {
     }
   };
   
+  const handleDeleteUser = async (username: string, social_name: string) => {
+    if (!window.confirm(`Are you sure you want to delete the ${social_name} user "${username}"?`)) {
+      return;
+    }
+  
+    setDeletingName(username);
+    setDeletingSocial(social_name);
+    setError(null);
+  
+    try {
+      const res = await fetch(`/api/users`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username, social_name: social_name }),
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || `Failed to delete the ${social_name} user "${username}"`);
+      }
+  
+      await fetchUsers();
+    } catch (err: any) {
+      console.error(`Failed to delete the ${social_name} user "${username}"`, err);
+      setError(`Could not delete user: ${err.message || "Unknown error"}`);
+    } finally {
+      setDeletingName(null);
+      setDeletingSocial(null);
+    }
+  };
+  
   return (
     <Container>
       <Row className="mb-4">
@@ -233,6 +279,27 @@ export default function UsersPage() {
                         onClick={() => setEditingUser({ ...u })}
                       >
                         Edit
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleDeleteUser(u.username, u.social_name)}
+                        disabled={deletingName === u.username && deletingSocial === u.social_name}
+                      >
+                        {deletingName === u.username && deletingSocial === u.social_name ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                            />{" "}
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete"
+                        )}
                       </Button>
                     </td>
                   </tr>
