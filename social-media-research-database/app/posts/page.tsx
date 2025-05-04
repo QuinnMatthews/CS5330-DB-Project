@@ -1,9 +1,19 @@
 // posts/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { Container, Row, Col, Form, Button, Table } from "react-bootstrap";
-import { useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Form,
+  Button,
+  Table,
+  Alert,
+  Spinner,
+  Modal,
+} from "react-bootstrap";
+import moment from 'moment';
 
 type Post = {
   datetime: string;
@@ -32,6 +42,10 @@ export default function PostsPage() {
   const [usernamesForPlatform, setUsernamesForPlatform] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [editingPost, setEditingPost] = useState<Partial<Post> | null>(null);
+  const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [deletingName, setDeletingName] = useState<string | null>(null);
+  const [deletingSocial, setDeletingSocial] = useState<string | null>(null);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -73,6 +87,9 @@ export default function PostsPage() {
     const usernames = users.filter((u) => u.social_name === platform).map((u) => u.username);
     setUsernamesForPlatform(usernames);
   };
+  
+  const timeFormat = (datetime: string) => moment(datetime).format('YYYY-MM-DDTHH:mm:ss');
+  const sqlFormat = (datetime: string) => moment(datetime).utc().format('YYYY-MM-DDTHH:mm:ss');
 
   const handleNewPostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +100,7 @@ export default function PostsPage() {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPost),
+        body: JSON.stringify({...newPost, datetime: sqlFormat(newPost.datetime)}),
       });
 
       if (!res.ok) {
@@ -103,6 +120,94 @@ export default function PostsPage() {
       console.error("Submit post error:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost) return;
+    setSaving(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/posts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({...editingPost, datetime: sqlFormat(editingPost.datetime)}),
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || "Failed to update user.");
+      }
+  
+      setEditingPost(null);
+      await fetchPosts();
+    } catch (err: any) {
+      setError(`Could not update post: ${err.message || "Unknown error"}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePost = async (datetime: string, username: string, social_name: string) => {
+    if (!window.confirm(`Are you sure you want to delete the post posted at \
+${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"?`)) {
+      return;
+    }
+
+    setDeletingDate(datetime);
+    setDeletingName(username);
+    setDeletingSocial(social_name);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/posts`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ datetime: sqlFormat(datetime), username: username, social_name: social_name }),
+      });
+  
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+  
+        if (errorData?.details) {
+          const messages = Object.entries(errorData.details)
+            .map(([field, issue]: any) => {
+              const msg = issue?._errors?.[0];
+              return msg ? `${field}: ${msg}` : null;
+            })
+            .filter(Boolean)
+            .join("; ");
+  
+          throw new Error(messages || "Invalid input.");
+        }
+  
+        throw new Error(errorData.error || `Failed to delete the post posted at \
+${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`);
+      }
+  
+      await fetchPosts();
+    } catch (err: any) {
+      console.error(`Failed to delete the post posted at \
+${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`, err);
+      setError(`Could not delete post: ${err.message || "Unknown error"}`);
+    } finally {
+      setDeletingDate(null);
+      setDeletingName(null);
+      setDeletingSocial(null);
     }
   };
 
@@ -408,6 +513,7 @@ export default function PostsPage() {
                   <th>Likes</th>
                   <th>Dislikes</th>
                   <th>Multimedia</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,6 +531,36 @@ export default function PostsPage() {
                     <td>{post.likes ?? 0}</td>
                     <td>{post.dislikes ?? 0}</td>
                     <td>{post.has_multimedia ? "✔️" : "❌"}</td>
+                    <td>
+                      <Button
+                        size="sm"
+                        variant="outline-secondary"
+                        onClick={() => setEditingPost({ ...post })}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleDeletePost(post.datetime, post.username, post.social_name)}
+                        disabled={deletingDate === post.datetime && deletingName === post.username && deletingSocial === post.social_name}
+                      >
+                        {deletingDate === post.datetime && deletingName === post.username && deletingSocial === post.social_name ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                            />{" "}
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete"
+                        )}
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -432,6 +568,133 @@ export default function PostsPage() {
           )}
         </Col>
       </Row>
+
+      {/* Edit Modal */}
+      <Modal show={!!editingPost} onHide={() => setEditingPost(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Edit Post
+            {editingPost && (
+              <small className="text-muted ms-2">
+                by {editingPost.username} on {editingPost.social_name}
+              </small>
+            )}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {editingPost && (
+            <>
+              <Form.Group className="mb-3">
+              <Form.Label>Post Text</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={editingPost.text || ""}
+                required
+                onChange={(e) =>
+                  setEditingPost({ ...editingPost, text: e.target.value })
+                }
+              />
+            </Form.Group>
+
+            <Row>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>City</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={editingPost.city || ""}
+                    onChange={(e) =>
+                      setEditingPost({ ...editingPost, city: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>State</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={editingPost.region || ""}
+                    onChange={(e) =>
+                      setEditingPost({ ...editingPost, region: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Country</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={editingPost.country || ""}
+                    onChange={(e) =>
+                      setEditingPost({ ...editingPost, country: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Likes</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={editingPost.likes || ""}
+                    min={0}
+                    onChange={(e) =>
+                      setEditingPost({ ...editingPost,
+                        likes: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Dislikes</Form.Label>
+                  <Form.Control
+                    type="number"
+                    value={editingPost.dislikes || ""}
+                    min={0}
+                    onChange={(e) =>
+                      setEditingPost({ ...editingPost,
+                        dislikes: parseInt(e.target.value) || 0,
+                      })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Includes multimedia"
+                checked={!!editingPost.has_multimedia}
+                onChange={(e) =>
+                  setEditingPost({ ...editingPost, has_multimedia: e.target.checked })
+                }
+              />
+            </Form.Group>
+
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setEditingPost(null)}>
+            Cancel
+          </Button>
+          <Button
+            variant="success"
+            onClick={handleUpdatePost}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 }
