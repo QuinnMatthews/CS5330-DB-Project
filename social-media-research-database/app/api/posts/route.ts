@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     const query = `
       INSERT INTO post (datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const result = await queryDB(query, [
       datetime,
@@ -155,7 +155,7 @@ export async function PATCH(request: NextRequest) {
     const query = `
       UPDATE post
       SET text = ?, country = ?, region = ?, city = ?, likes = ?, dislikes = ?, has_multimedia = ?
-      WHERE datetime = ? AND username = ? AND social_name = ?
+      WHERE datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND username = ? AND social_name = ?
     `;
     const result = await queryDB(query, [
       text,
@@ -187,7 +187,7 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const { datetime, username, social_name } = parseResult.data;
-    const query = `DELETE FROM post WHERE datetime = ? AND username = ? AND social_name = ?`;
+    const query = `DELETE FROM post WHERE datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND username = ? AND social_name = ?`;
     const result = await queryDB(query, [datetime, username, social_name]);
     return NextResponse.json(result);
   } catch (err: any) {
