@@ -16,12 +16,7 @@ type Post = {
   has_multimedia: boolean;
 };
 
-type User = {
-  username: string;
-  social_name: string;
-  first_name?: string;
-  last_name?: string;
-};
+import type { User } from "@/app/users/types";
 
 export default function SearchPostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);

@@ -27,14 +27,19 @@ const postIdentitySchema = z.object({
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
 });
 
-const querySchema = z.object({
-  social_name: z.string().max(100).optional(),
-  username: z.string().max(100).optional(),
-  start: z.string().datetime().optional(),
-  end: z.string().datetime().optional(),
-  first_name: z.string().max(50).optional(),
-  last_name: z.string().max(50).optional(),
-});
+const querySchema = z
+	.object({
+		social_name: z.string().max(100).optional(),
+		username: z.string().max(100).optional(),
+		start: isoDateTime.optional(),   // normalise to `"YYYY-MM-DD HH:MM:SS"`
+		end:   isoDateTime.optional(),
+		first_name: z.string().max(50).optional(),
+		last_name: z.string().max(50).optional(),
+	})
+	.refine(
+		(data) => !(data.start && data.end) || data.start <= data.end,
+		{ message: "`start` date must be before or equal to `end` date", path: ["end"] }
+	);
 
 
 // GET all posts w/ optional filters
