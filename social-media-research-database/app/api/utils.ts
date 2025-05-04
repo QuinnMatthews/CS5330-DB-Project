@@ -5,7 +5,7 @@ let connectionParams = GetDBSettings();
 
 export async function queryDB<T = any>(
   query: string,
-  values: any[] = []
+  values: (string | boolean | null)[] = []
 ): Promise<T> {
   let connection: mysql.Connection | null = null;
 
