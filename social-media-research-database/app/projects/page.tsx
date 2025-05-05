@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Field, Project } from "./types";
+import { Project } from "./types";
 import {
   Container,
   Row,
   Col,
-  Form,
   Button,
   Table,
   Alert,
@@ -15,6 +14,7 @@ import {
 } from "react-bootstrap";
 import AddProjectModal from "./AddProjectModal";
 import EditProjectModal from "./EditProjectModal";
+import ManageProjectPostsModal from "./ManageProjectPostsModal";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -23,6 +23,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditPostsModal, setShowEditPostsModal] = useState(false);
 
   const fetchProjects = async () => {
     setLoading(true);
@@ -159,6 +160,17 @@ export default function ProjectsPage() {
                           Edit
                         </Button>
                         <Button
+                          variant="outline-success"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedProject(p);
+                            setShowEditPostsModal(true);
+                          }}
+                          className="ms-2"
+                        >
+                          Manage Posts
+                        </Button>
+                        <Button
                           variant="outline-danger"
                           size="sm"
                           onClick={() => {
@@ -166,7 +178,8 @@ export default function ProjectsPage() {
                           }}
                           disabled={loading}
                           className="ms-2"
-                        >Delete</Button>
+                        >
+                          Delete</Button>
                       </td>
                     </tr>
                   ))}
@@ -176,6 +189,12 @@ export default function ProjectsPage() {
           </Col>
         </Row>
 
+        <AddProjectModal
+          show={showAddModal}
+          onHide={() => setShowAddModal(false)}
+          onRefresh={fetchProjects}
+        />
+
         <EditProjectModal
           show={showEditModal}
           onHide={() => setShowEditModal(false)}
@@ -183,9 +202,10 @@ export default function ProjectsPage() {
           onRefresh={fetchProjects}
         />
 
-        <AddProjectModal
-          show={showAddModal}
-          onHide={() => setShowAddModal(false)}
+        <ManageProjectPostsModal
+          show={showEditPostsModal}
+          onHide={() => setShowEditPostsModal(false)}
+          selectedProject={selectedProject}
           onRefresh={fetchProjects}
         />
       </Stack>

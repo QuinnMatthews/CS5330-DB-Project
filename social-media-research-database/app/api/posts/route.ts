@@ -4,20 +4,20 @@ import { queryDB } from "@/app/api/utils";
 
 
 // Common Zod Validators
-const isoDateTime = z.string().datetime({local: true, invalid_type_error: "Invalid date format"}).transform(s => s.replace("T", " "));
+const isoDateTime = z.string().datetime({local: true}).transform(s => s.replace("T", " "));
 
 // Create/Update user schema
 const postSchema = z.object({
   datetime: isoDateTime,
   username: z.string().min(1, "Username is required").max(100, "Username is too long"),
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
-  text: z.string().optional(),
-  country: z.string().max(50, "Country is too long").optional(),
-  region: z.string().max(50, "State is too long").optional(),
-  city: z.string().max(50, "City is too long").optional(),
-  likes: z.number().int().nonnegative(),
-  dislikes: z.number().int().nonnegative(),
-  has_multimedia: z.coerce.boolean(),
+  text: z.string().optional().nullable(),
+  country: z.string().max(50, "Country is too long").optional().nullable(),
+  region: z.string().max(50, "State is too long").optional().nullable(),
+  city: z.string().max(50, "City is too long").optional().nullable(),
+  likes: z.number().int().nonnegative().optional().nullable(),
+  dislikes: z.number().int().nonnegative().optional().nullable(),
+  has_multimedia: z.coerce.boolean().nullable(),
 });
 
 // Used for deletion and identifying rows
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     JOIN user ON post.username = user.username AND post.social_name = user.social_name
     WHERE 1=1
   `;
-  const params: any[] = [];
+  const params: string[] = [];
 
   if (social_name) {
     query += " AND post.social_name = ?";
@@ -124,12 +124,12 @@ export async function POST(request: NextRequest) {
       datetime,
       username,
       social_name,
-      text,
-      country,
-      region,
-      city,
-      likes,
-      dislikes,
+      text || null,
+      country || null,
+      region || null,
+      city || null,
+      likes || null,
+      dislikes || null,
       has_multimedia
     ]);
     return NextResponse.json(result);
@@ -158,12 +158,12 @@ export async function PATCH(request: NextRequest) {
       WHERE datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND username = ? AND social_name = ?
     `;
     const result = await queryDB(query, [
-      text,
-      country,
-      region,
-      city,
-      likes,
-      dislikes,
+      text || null,
+      country || null,
+      region || null,
+      city || null,
+      likes || null,
+      dislikes || null,
       has_multimedia,
       datetime,
       username,

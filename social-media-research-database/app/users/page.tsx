@@ -45,8 +45,8 @@ export default function UsersPage() {
           verified: u.verified,
         }))
       );
-    } catch (err) {
-      setError("Failed to load users.");
+    } catch (err: any) {
+      setError("Failed to load users: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -98,8 +98,10 @@ export default function UsersPage() {
         throw new Error(errorData.error || `Failed to add user: ${res.status}`);
       }
   
+      const addedUser = { ...newUser };
       setNewUser({});
       await fetchUsers();
+      setEditingUser(addedUser);
     } catch (err: any) {
       setError(`Could not add user: ${err.message || "Unknown error"}`);
       console.error("Add user error:", err);

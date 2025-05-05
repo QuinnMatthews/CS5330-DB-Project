@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
-import { Field, Project } from "./types";
+import { Project } from "./types";
 
 type Props = {
   show: boolean;

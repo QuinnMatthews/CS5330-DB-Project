@@ -1,7 +1,9 @@
 // posts/page.tsx
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import { Post } from "./types";
+
 import {
   Container,
   Row,
@@ -9,24 +11,10 @@ import {
   Form,
   Button,
   Table,
-  Alert,
   Spinner,
   Modal,
 } from "react-bootstrap";
 import moment from 'moment';
-
-type Post = {
-  datetime: string;
-  username: string;
-  social_name: string;
-  text: string;
-  city?: string;
-  region?: string;
-  country?: string;
-  likes?: number;
-  dislikes?: number;
-  has_multimedia: boolean;
-};
 
 type User = {
   username: string;
@@ -88,7 +76,6 @@ export default function PostsPage() {
     setUsernamesForPlatform(usernames);
   };
   
-  const timeFormat = (datetime: string) => moment(datetime).format('YYYY-MM-DDTHH:mm:ss');
   const sqlFormat = (datetime: string) => moment(datetime).utc().format('YYYY-MM-DDTHH:mm:ss');
 
   const handleNewPostSubmit = async (e: React.FormEvent) => {
