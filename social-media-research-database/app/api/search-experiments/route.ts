@@ -45,6 +45,15 @@ export async function GET(req: NextRequest) {
 
     const results = await queryDB(query, [name]);
 
+    const fieldsQuery = `
+      SELECT name
+      FROM Field
+      WHERE project_name = ?;
+    `;
+
+    const fieldsResults = await queryDB(fieldsQuery, [name]);
+    const allFields = fieldsResults.map((field: any) => field.name);
+
     const posts: {
       datetime: string;
       username: string;
@@ -84,7 +93,18 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    Object.values(postMap).forEach((post) => posts.push(post));
+    Object.values(postMap).forEach((post) => {
+      // Ensure all fields are included in field_results
+      const existingFields = new Set(post.field_results.map((fr) => fr.field_name));
+      allFields.forEach((field) => {
+        if (!existingFields.has(field)) {
+          post.field_results.push({ field_name: field, result: null });
+        }
+      });
+      posts.push(post);
+    });
+
+    console.log("Post Field Results:", posts.map((post) => post.field_results));
 
     const statsQuery = `
       SELECT
@@ -104,9 +124,27 @@ export async function GET(req: NextRequest) {
 
     const statsResults = await queryDB(statsQuery, [name, name]);
 
-    const field_stats = statsResults.map((stat: any) => ({
-      field: stat.field_name,
-      percentage_with_value: (stat.posts_with_field / stat.total_posts) * 100,
+    const totalPostsQuery = `
+      SELECT COUNT(DISTINCT CONCAT(p.datetime, '|', p.username, '|', p.social_name)) AS total_posts
+      FROM Post p
+      LEFT JOIN FieldResult fr
+      ON fr.post_datetime = p.datetime 
+      AND fr.post_username = p.username 
+      AND fr.post_social_name = p.social_name
+      WHERE fr.project_name = ?;
+    `;
+
+    const totalPostsResult = await queryDB(totalPostsQuery, [name]);
+    const totalPosts = totalPostsResult[0]?.total_posts || 0;
+
+    const fieldStatsMap: Record<string, number> = {};
+    statsResults.forEach((stat: any) => {
+      fieldStatsMap[stat.field_name] = (stat.posts_with_field / totalPosts) * 100;
+    });
+
+    const field_stats = allFields.map((field) => ({
+      field,
+      percentage_with_value: fieldStatsMap[field] || 0,
     }));
 
     return NextResponse.json({
