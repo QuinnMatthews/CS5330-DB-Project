@@ -18,6 +18,7 @@ import {
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [newUser, setNewUser] = useState<Partial<User>>({});
   const [editingUser, setEditingUser] = useState<Partial<User> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,17 +72,17 @@ export default function UsersPage() {
     e.preventDefault();
     setSaving(true);
     setError(null);
-  
+
     try {
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-  
+
         if (errorData?.details) {
           // Extract zod-formatted errors into a readable string
           const messages = Object.entries(errorData.details)
@@ -91,16 +92,17 @@ export default function UsersPage() {
             })
             .filter(Boolean)
             .join("; ");
-  
+
           throw new Error(messages || "Invalid input.");
         }
-  
+
         throw new Error(errorData.error || `Failed to add user: ${res.status}`);
       }
-  
+
       const addedUser = { ...newUser };
       setNewUser({});
       await fetchUsers();
+      setShowAddModal(false);
       setEditingUser(addedUser);
     } catch (err: any) {
       setError(`Could not add user: ${err.message || "Unknown error"}`);
@@ -109,23 +111,22 @@ export default function UsersPage() {
       setSaving(false);
     }
   };
-  
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
     setSaving(true);
     setError(null);
-  
+
     try {
       const res = await fetch("/api/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingUser),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-  
+
         if (errorData?.details) {
           const messages = Object.entries(errorData.details)
             .map(([field, issue]: any) => {
@@ -134,13 +135,13 @@ export default function UsersPage() {
             })
             .filter(Boolean)
             .join("; ");
-  
+
           throw new Error(messages || "Invalid input.");
         }
-  
+
         throw new Error(errorData.error || "Failed to update user.");
       }
-  
+
       setEditingUser(null);
       await fetchUsers();
     } catch (err: any) {
@@ -149,26 +150,30 @@ export default function UsersPage() {
       setSaving(false);
     }
   };
-  
+
   const handleDeleteUser = async (username: string, social_name: string) => {
-    if (!window.confirm(`Are you sure you want to delete the ${social_name} user "${username}"?`)) {
+    if (
+      !window.confirm(
+        `Are you sure you want to delete the ${social_name} user "${username}"?`
+      )
+    ) {
       return;
     }
-  
+
     setDeletingName(username);
     setDeletingSocial(social_name);
     setError(null);
-  
+
     try {
       const res = await fetch(`/api/users`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: username, social_name: social_name }),
       });
-  
+
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-  
+
         if (errorData?.details) {
           const messages = Object.entries(errorData.details)
             .map(([field, issue]: any) => {
@@ -177,70 +182,43 @@ export default function UsersPage() {
             })
             .filter(Boolean)
             .join("; ");
-  
+
           throw new Error(messages || "Invalid input.");
         }
-  
-        throw new Error(errorData.error || `Failed to delete the ${social_name} user "${username}"`);
+
+        throw new Error(
+          errorData.error ||
+            `Failed to delete the ${social_name} user "${username}"`
+        );
       }
-  
+
       await fetchUsers();
     } catch (err: any) {
-      console.error(`Failed to delete the ${social_name} user "${username}"`, err);
+      console.error(
+        `Failed to delete the ${social_name} user "${username}"`,
+        err
+      );
       setError(`Could not delete user: ${err.message || "Unknown error"}`);
     } finally {
       setDeletingName(null);
       setDeletingSocial(null);
     }
   };
-  
+
   return (
     <Container>
-      <Row className="mb-4">
+      <Row >
         <Col>
           <h2 className="fw-bold">Users</h2>
           <p className="text-muted">Manage social media users per platform.</p>
         </Col>
       </Row>
 
-      <Row>
+      <Row className="mt-2">
         <Col md={6}>
-          <Form onSubmit={handleAddUser}>
-            <Form.Group className="mb-3">
-              <Form.Label>Platform</Form.Label>
-              <Form.Select
-                required
-                value={newUser.social_name || ""}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, social_name: e.target.value })
-                }
-              >
-                <option value="">Choose platform</option>
-                {platforms.map((p) => (
-                  <option key={p.name} value={p.name}>
-                    {p.name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Username</Form.Label>
-              <Form.Control
-                required
-                type="text"
-                maxLength={100}
-                value={newUser.username || ""}
-                onChange={(e) =>
-                  setNewUser({ ...newUser, username: e.target.value })
-                }
-              />
-            </Form.Group>
-
-            <Button type="submit" variant="primary" disabled={saving}>
-              {saving ? "Saving..." : "Add User"}
-            </Button>
-          </Form>
+          <Button variant="primary" onClick={() => setShowAddModal(true)}>
+            Add New User
+          </Button>
           {error && (
             <Alert className="mt-3" variant="danger">
               {error}
@@ -249,7 +227,7 @@ export default function UsersPage() {
         </Col>
       </Row>
 
-      <Row className="mt-5">
+      <Row className="mt-2">
         <Col>
           <h5>Existing Users</h5>
           {loading ? (
@@ -285,10 +263,16 @@ export default function UsersPage() {
                       <Button
                         variant="outline-danger"
                         size="sm"
-                        onClick={() => handleDeleteUser(u.username, u.social_name)}
-                        disabled={deletingName === u.username && deletingSocial === u.social_name}
+                        onClick={() =>
+                          handleDeleteUser(u.username, u.social_name)
+                        }
+                        disabled={
+                          deletingName === u.username &&
+                          deletingSocial === u.social_name
+                        }
                       >
-                        {deletingName === u.username && deletingSocial === u.social_name ? (
+                        {deletingName === u.username &&
+                        deletingSocial === u.social_name ? (
                           <>
                             <Spinner
                               as="span"
@@ -402,19 +386,19 @@ export default function UsersPage() {
                   }
                 />
               </Form.Group>
-              
-            <Form.Group className="mb-3">
-              <Form.Check
-                label="Verified"
-                checked={editingUser.verified}
-                onChange={(e) =>
-                  setEditingUser({
+
+              <Form.Group className="mb-3">
+                <Form.Check
+                  label="Verified"
+                  checked={editingUser.verified}
+                  onChange={(e) =>
+                    setEditingUser({
                       ...editingUser,
                       verified: e.target.checked,
                     })
-                }
-              />
-            </Form.Group>
+                  }
+                />
+              </Form.Group>
             </>
           )}
         </Modal.Body>
@@ -430,6 +414,62 @@ export default function UsersPage() {
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New User</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleAddUser}>
+            <Form.Group className="mb-3">
+              <Form.Label>Platform</Form.Label>
+              <Form.Select
+                required
+                value={newUser.social_name || ""}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, social_name: e.target.value })
+                }
+              >
+                <option value="">Choose platform</option>
+                {platforms.map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {p.name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Username</Form.Label>
+              <Form.Control
+                required
+                type="text"
+                maxLength={100}
+                value={newUser.username || ""}
+                onChange={(e) =>
+                  setNewUser({ ...newUser, username: e.target.value })
+                }
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setNewUser({});
+                }}
+                className="me-2"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" disabled={saving}>
+                {saving ? "Saving..." : "Add User"}
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
       </Modal>
     </Container>
   );
