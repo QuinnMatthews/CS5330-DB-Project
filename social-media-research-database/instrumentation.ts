@@ -154,7 +154,11 @@ export const tables: Record<string, TableDefinition> = {
                 ['Cat Sentiment Analysis :3', '2015-03-14 09:26:53', 'jdoe2', 'Twitter'],
                 ['Disinformation Analyzer', '2015-03-14 09:26:53', 'jdoe2', 'Twitter'],
                 ['Disinformation Analyzer', '2025-05-01 07:15:28', 'linda99', 'LinkedIn'],
-                
+                ['Disinformation Analyzer', '2025-05-01 07:16:35', 'mydogisthebest', 'Twitter'],
+                ['Mu Alpha Theta Pi Project', '2015-03-14 09:26:55', 'therealjdoe2', 'TikTok'],
+                ['Mu Alpha Theta Pi Project', '2015-03-14 09:26:53', 'jdoe2', 'Twitter'],
+                ['Cat Sentiment Analysis :3', '2024-12-31 15:00:05+00:00', 'iheartmycat', 'Instagram'],
+                ['Cat Sentiment Analysis :3', '2025-05-01 07:16:35', 'mydogisthebest', 'Twitter']
             ],
         },
     },
@@ -169,7 +173,7 @@ export const tables: Record<string, TableDefinition> = {
                 result TEXT,
                 PRIMARY KEY (field_name, project_name, post_datetime, post_username, post_social_name),
                 FOREIGN KEY (field_name, project_name) REFERENCES field(name, project_name) ON DELETE CASCADE,
-                FOREIGN KEY (post_datetime, post_username, post_social_name) REFERENCES post(datetime, username, social_name) ON DELETE CASCADE
+                FOREIGN KEY (project_name, post_datetime, post_username, post_social_name) REFERENCES project_post(project_name, datetime, username, social_name) ON DELETE CASCADE
             )
         `,
         demoData: {
