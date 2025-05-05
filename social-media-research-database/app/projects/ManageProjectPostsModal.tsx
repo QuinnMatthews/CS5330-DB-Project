@@ -22,11 +22,15 @@ type Props = {
   onHide: () => void;
   selectedProject: Project | null;
 };
+  
+const userTimeFormat = (datetime: string, seconds: boolean) =>
+  moment(datetime).local().format("LL, LT" + (seconds ? "S" : ""));
 
 const sqlFormat = (datetime: string) =>
+  moment(datetime).utc().format("YYYY-MM-DDTHH:mm:ss");
+
+const sqlFormatNonConverting = (datetime: string) =>
   moment(datetime).format("YYYY-MM-DDTHH:mm:ss");
-const timeFormat = (datetime: string) =>
-  moment(datetime).format("YYYY-MM-DD HH:mm:ss");
 
 export default function ManageProjectPostsModal({
   show,
@@ -50,6 +54,7 @@ export default function ManageProjectPostsModal({
     city: "",
     likes: 0,
     dislikes: 0,
+    seconds_known: true,
     has_multimedia: false,
   });
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -57,6 +62,7 @@ export default function ManageProjectPostsModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [addSecondsKnown, setAddSecondsKnown] = useState(true);
 
   useEffect(() => {
     fetchPlatforms();
@@ -179,6 +185,7 @@ export default function ManageProjectPostsModal({
         likes: Number(newPost.likes),
         dislikes: Number(newPost.dislikes),
         has_multimedia: Boolean(newPost.has_multimedia),
+        seconds_known: Boolean(addSecondsKnown),
       };
 
       const res = await fetch("/api/posts", {
@@ -197,6 +204,7 @@ export default function ManageProjectPostsModal({
       });
 
       setError(null);
+      setAddSecondsKnown(true);
 
       await fetchAllPosts();
       await fetchAssociatedPosts(selectedProject.name);
@@ -212,6 +220,7 @@ export default function ManageProjectPostsModal({
         likes: 0,
         dislikes: 0,
         has_multimedia: false,
+        seconds_known: true,
       });
       setShowAddModal(false);
     } catch (err) {
@@ -232,6 +241,8 @@ export default function ManageProjectPostsModal({
       setError("All fields are required.");
       return;
     }
+    
+    console.log(post);
 
     try {
       await fetch(`/api/projects/${selectedProject.name}/posts`, {
@@ -380,7 +391,7 @@ export default function ManageProjectPostsModal({
                   <tr
                     key={`${post.datetime}-${post.username}-${post.social_name}`}
                   >
-                    <td>{timeFormat(post.datetime)}</td>
+                    <td>{userTimeFormat(post.datetime, post.seconds_known)}</td>
                     <td>{post.username}</td>
                     <td>{post.social_name}</td>
                     <td>{post.text?.slice(0, 40)}...</td>
@@ -462,7 +473,7 @@ export default function ManageProjectPostsModal({
                   <tr
                     key={`${post.datetime}-${post.username}-${post.social_name}`}
                   >
-                    <td>{timeFormat(post.datetime)}</td>
+                    <td>{userTimeFormat(post.datetime, post.seconds_known)}</td>
                     <td>{post.username}</td>
                     <td>{post.social_name}</td>
                     <td>{post.text?.slice(0, 40)}...</td>
@@ -546,11 +557,21 @@ export default function ManageProjectPostsModal({
                   <Form.Label>Datetime</Form.Label>
                   <Form.Control
                     type="datetime-local"
+                    step={addSecondsKnown ? 1 : 60}
                     value={newPost.datetime || ""}
                     onChange={(e) =>
                       setNewPost({ ...newPost, datetime: e.target.value })
                     }
                     required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    label="Seconds known"
+                    checked={addSecondsKnown}
+                    onChange={(e) => 
+                      setAddSecondsKnown(e.target.checked)
+                    }
                   />
                 </Form.Group>
               </Col>

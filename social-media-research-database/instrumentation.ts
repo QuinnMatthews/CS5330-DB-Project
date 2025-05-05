@@ -240,6 +240,7 @@ export async function register() {
         await connection.execute(`DROP TABLE IF EXISTS repost`, []);
         await connection.execute(`DROP TABLE IF EXISTS post`, []);
         await connection.execute(`DROP TABLE IF EXISTS user`, []);
+        await connection.execute(`DROP TABLE IF EXISTS social`, []);
     }
 
     // Loop through each table definition

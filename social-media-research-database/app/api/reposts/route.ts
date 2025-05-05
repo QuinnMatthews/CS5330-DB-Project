@@ -43,10 +43,8 @@ export async function POST(request: NextRequest) {
         const { } =
             parseResult.data;
 
-        const query = `
-      INSERT INTO repost(repost_datetime, repost_seconds_known, repost_username, post_datetime, post_username, social_name)
-      VALUES (CONVERT_TZ(?, '+00:00', 'SYSTEM'),?,?,CONVERT_TZ(?, '+00:00', 'SYSTEM'),?,?)
-    `;
+        const query = `INSERT INTO repost (repost_datetime, repost_seconds_known, repost_username, post_datetime, post_username, social_name)
+        VALUES (CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?, CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?)`;
 
         const { repost_datetime, repost_seconds_known, repost_username, post_datetime, post_username, social_name } = parseResult.data;
 

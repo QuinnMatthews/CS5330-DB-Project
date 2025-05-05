@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia } =
+    const { datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia, seconds_known } =
       parseResult.data;
 
     const query = `
