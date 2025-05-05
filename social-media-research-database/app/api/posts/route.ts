@@ -4,7 +4,7 @@ import { queryDB } from "@/app/api/utils";
 
 
 // Common Zod Validators
-const isoDateTime = z.string().datetime({local: true, invalid_type_error: "Invalid date format"}).transform(s => s.replace("T", " "));
+const isoDateTime = z.string().datetime({local: true}).transform(s => s.replace("T", " "));
 
 // Create/Update user schema
 const postSchema = z.object({

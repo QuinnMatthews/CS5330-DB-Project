@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { Post } from "./types";
+
 import {
   Container,
   Row,
@@ -14,19 +16,6 @@ import {
   Modal,
 } from "react-bootstrap";
 import moment from 'moment';
-
-type Post = {
-  datetime: string;
-  username: string;
-  social_name: string;
-  text: string;
-  city?: string;
-  region?: string;
-  country?: string;
-  likes?: number;
-  dislikes?: number;
-  has_multimedia: boolean;
-};
 
 type User = {
   username: string;
