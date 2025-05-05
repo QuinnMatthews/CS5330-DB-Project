@@ -9,6 +9,7 @@ const isoDateTime = z.string().datetime({ local: true }).transform(s => s.replac
 // Create/Update user schema
 const repostSchema = z.object({
     repost_datetime: isoDateTime,
+    repost_seconds_known: z.coerce.boolean().nullable(),
     repost_username: z.string().min(1, "Username is required").max(100, "Username is too long"),
     post_datetime: isoDateTime,
     post_username: z.string().min(1, "Username is required").max(100, "Username is too long"),
@@ -43,14 +44,15 @@ export async function POST(request: NextRequest) {
             parseResult.data;
 
         const query = `
-      INSERT INTO repost(repost_datetime, repost_username, post_datetime, post_username, social_name)
-      VALUES (?,?,?,?,?)
+      INSERT INTO repost(repost_datetime, repost_seconds_known, repost_username, post_datetime, post_username, social_name)
+      VALUES (CONVERT_TZ(?, '+00:00', 'SYSTEM'),?,?,CONVERT_TZ(?, '+00:00', 'SYSTEM'),?,?)
     `;
 
-        const { repost_datetime, repost_username, post_datetime, post_username, social_name } = parseResult.data;
+        const { repost_datetime, repost_seconds_known, repost_username, post_datetime, post_username, social_name } = parseResult.data;
 
         const result = await queryDB(query, [
             repost_datetime,
+            repost_seconds_known,
             repost_username,
             post_datetime,
             post_username,
@@ -78,9 +80,9 @@ export async function DELETE(request: NextRequest) {
         const { repost_datetime, repost_username, post_datetime, post_username, social_name } = parseResult.data;
 
         const query = `DELETE FROM repost 
-            WHERE repost_datetime = ?
+            WHERE repost_datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM')
             AND repost_username = ?
-            AND post_datetime = ?
+            AND post_datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM')
             AND post_username = ?
             AND social_name = ?`;
 

@@ -69,26 +69,27 @@ export const tables: Record<string, TableDefinition> = {
                 likes INT,
                 dislikes INT,
                 has_multimedia BOOLEAN,
+                seconds_known BOOLEAN,
                 PRIMARY KEY (datetime, username, social_name),
                 FOREIGN KEY (username, social_name) REFERENCES user(username, social_name) ON DELETE CASCADE
             )
         `,
         demoData: {
-            insert: `INSERT INTO post (datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            insert: `INSERT INTO post (datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia, seconds_known)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             values: [
-                ['2020-01-01 00:00:04+09:00', 'iheartmycat', 'Instagram', 'happy meow year', 'Japan', 'Ehime', 'Ozu', '43110', '0', '1'],
-                ['2015-03-14 09:26:53', 'jdoe2', 'Twitter', "It's pi o'clock", 'England', 'London', 'London', '314159', '26535', '0'],
-                ['2015-03-14 09:26:55', 'therealjdoe2', 'TikTok', "jdoe2 on Twitter is FAKE. The REAL John Doe is here on Musical.ly", "China", "Shanghai", "Shanghai", "4547", "0", '1'],
-                ['2025-03-28 19:16:00', 'therealjdoe2', 'TikTok', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (60+)", "USA", "Texas", "Dallas", "9976878", "0", '1'],
-                ['2025-04-28 19:16:05', 'Bob212', 'YouTube', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (55+) confused about CRYPTO!", "USA", "Texas", "Dallas", "987654", "0", '1'],
-                ['2025-04-29 15:26:55', 'reddituser123', 'Reddit', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (50+) confused about CRYPTO! Our platform will protect you against scams using chatbots!!1!", "USA", "Texas", "Dallas", "14579", "4824", '0'],
-                ['2025-04-30 11:28:35', 'reddituser123', 'Reddit', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (45+) confused about CRYPTO blockchain! We use CHATBOTS with GUARDRAILS to protect you from SCAMS!!!", "USA", "Texas", "Dallas", "50089", "1112", '0'],
-                ['2025-05-01 07:15:28', 'linda99', 'LinkedIn', 'Arab traders fooled Europeans, including Aristotle, into thinking cinnamon came from a cinnamon bird, a belief that survived for two thousand years. Be more like those Arab traders and protect your trade secrets!', 'UAE', 'Dubai', 'Dubai', "123456", "43210", '1'],
-                ['2025-05-01 07:16:35', 'mydogisthebest', 'Twitter', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior DOGS (5+) confused about CRYPTO blockchain and HUMANS! Our HALLUCINATION PROOF CHATBOTS will protect your DOG from SCAMS!!1!", "USA", "Nevada", "Las Vegas", "234", "65422", '0'],
-                ['2024-12-31 16:00:04+00:00', 'iheartmycat', 'Instagram', 'happy meow year in CHINA 🍵 #china #dongjing #catisland', 'China', 'Dongjing', 'Dongjing', '4234', '0', '1'],
-                ['2024-12-31 15:00:05+00:00', 'iheartmycat', 'Instagram', 'happy meow year in JAPAN 🍵 #japan #matcha #cat #catisland', 'Japan', 'Ehime', 'Ozu', '2147483647', '0', '1'],
-                ['2025-05-01 08:20:54', 'jsmithy315', 'Pinterest', 'Oepsie poepsie de trein is stukkie wukkie! we sijn heul hard aan t werk om dit te make mss kun je beter gaan fwietsen owo', 'The Netherlands', 'South Holland', 'The Hague', '10029', '140', '1'],
+                ['2020-01-01 00:00:04+09:00', 'iheartmycat', 'Instagram', 'happy meow year', 'Japan', 'Ehime', 'Ozu', '43110', '0', '1', '1'],
+                ['2015-03-14 09:26:53', 'jdoe2', 'Twitter', "It's pi o'clock", 'England', 'London', 'London', '314159', '26535', '0', '1'],
+                ['2015-03-14 09:26:55', 'therealjdoe2', 'TikTok', "jdoe2 on Twitter is FAKE. The REAL John Doe is here on Musical.ly", "China", "Shanghai", "Shanghai", "4547", "0", '1', '1'],
+                ['2025-03-28 19:16:00', 'therealjdoe2', 'TikTok', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (60+)", "USA", "Texas", "Dallas", "9976878", "0", '1', '0'],
+                ['2025-04-28 19:16:05', 'Bob212', 'YouTube', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (55+) confused about CRYPTO!", "USA", "Texas", "Dallas", "987654", "0", '1', '1'],
+                ['2025-04-29 15:26:55', 'reddituser123', 'Reddit', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (50+) confused about CRYPTO! Our platform will protect you against scams using chatbots!!1!", "USA", "Texas", "Dallas", "14579", "4824", '0', '1'],
+                ['2025-04-30 11:28:35', 'reddituser123', 'Reddit', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior ADULTS (45+) confused about CRYPTO blockchain! We use CHATBOTS with GUARDRAILS to protect you from SCAMS!!!", "USA", "Texas", "Dallas", "50089", "1112", '0', '1'],
+                ['2025-05-01 07:15:28', 'linda99', 'LinkedIn', 'Arab traders fooled Europeans, including Aristotle, into thinking cinnamon came from a cinnamon bird, a belief that survived for two thousand years. Be more like those Arab traders and protect your trade secrets!', 'UAE', 'Dubai', 'Dubai', "123456", "43210", '1', '1'],
+                ['2025-05-01 07:16:35', 'mydogisthebest', 'Twitter', "Join CRYPTOBUDDY, an AI CRYPTO platform for Senior DOGS (5+) confused about CRYPTO blockchain and HUMANS! Our HALLUCINATION PROOF CHATBOTS will protect your DOG from SCAMS!!1!", "USA", "Nevada", "Las Vegas", "234", "65422", '0', '1'],
+                ['2024-12-31 16:00:04+00:00', 'iheartmycat', 'Instagram', 'happy meow year in CHINA 🍵 #china #dongjing #catisland', 'China', 'Dongjing', 'Dongjing', '4234', '0', '1', '1'],
+                ['2024-12-31 15:00:05+00:00', 'iheartmycat', 'Instagram', 'happy meow year in JAPAN 🍵 #japan #matcha #cat #catisland', 'Japan', 'Ehime', 'Ozu', '2147483647', '0', '1', '1'],
+                ['2025-05-01 08:20:54', 'jsmithy315', 'Pinterest', 'Oepsie poepsie de trein is stukkie wukkie! we sijn heul hard aan t werk om dit te make mss kun je beter gaan fwietsen owo', 'The Netherlands', 'South Holland', 'The Hague', '10029', '140', '1', '1'],
             ],
         },
     },
@@ -96,6 +97,7 @@ export const tables: Record<string, TableDefinition> = {
         create: `
             CREATE TABLE repost (
                 repost_datetime DATETIME,
+                repost_seconds_known BOOLEAN,
                 repost_username VARCHAR(100),
                 post_datetime DATETIME,
                 post_username VARCHAR(100),
@@ -106,9 +108,9 @@ export const tables: Record<string, TableDefinition> = {
             )
         `,
         demoData: {
-            insert: `INSERT INTO repost (repost_datetime, repost_username, post_datetime, post_username, social_name) VALUES (?, ?, ?, ?, ?)`,
+            insert: `INSERT INTO repost (repost_datetime, repost_seconds_known, repost_username, post_datetime, post_username, social_name) VALUES (?, ?, ?, ?, ?, ?)`,
             values: [
-                ['2025-01-25 13:23:00', 'jsmithy315', '2024-12-31 15:00:05+00:00', 'iheartmycat', 'Instagram'],
+                ['2025-01-25 13:23:00', '1', 'jsmithy315', '2024-12-31 15:00:05+00:00', 'iheartmycat', 'Instagram'],
             ]
         }
     },
@@ -228,6 +230,17 @@ export async function register() {
     const connection = await mysql.createConnection(connectionParams);
 
     await connection.execute(`SET time_zone = 'SYSTEM'`, []);
+    
+    var debug_drop_tables = false;
+    if (debug_drop_tables) {
+        await connection.execute(`DROP TABLE IF EXISTS fieldresult`, []);
+        await connection.execute(`DROP TABLE IF EXISTS project_post`, []);
+        await connection.execute(`DROP TABLE IF EXISTS field`, []);
+        await connection.execute(`DROP TABLE IF EXISTS project`, []);
+        await connection.execute(`DROP TABLE IF EXISTS repost`, []);
+        await connection.execute(`DROP TABLE IF EXISTS post`, []);
+        await connection.execute(`DROP TABLE IF EXISTS user`, []);
+    }
 
     // Loop through each table definition
     for (const tableName of Object.keys(tables)) {

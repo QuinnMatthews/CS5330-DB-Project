@@ -42,6 +42,9 @@ export default function PostsPage() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [viewRepostPost, setViewRepostPost] = useState<Post | null>(null);
   const [newRepost, setNewRepost] = useState<Partial<Repost>>({});
+  const [deletingRepost, setDeletingRepost] = useState<Partial<Repost>>({});
+  const [addSecondsKnown, setAddSecondsKnown] = useState(true);
+  const [repostSecondsKnown, setRepostSecondsKnown] = useState(true);
 
   // Filters
   const [filters, setFilters] = useState({
@@ -95,6 +98,9 @@ export default function PostsPage() {
       .map((u) => u.username);
     setUsernamesForPlatform(usernames);
   };
+  
+  const userTimeFormat = (datetime: string, seconds: boolean) =>
+    moment(datetime).local().format("LL, LT" + (seconds ? "S" : ""));
 
   const sqlFormat = (datetime: string) =>
     moment(datetime).utc().format("YYYY-MM-DDTHH:mm:ss");
@@ -113,6 +119,7 @@ export default function PostsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...newPost,
+          seconds_known: addSecondsKnown,
           datetime: sqlFormat(newPost.datetime),
         }),
       });
@@ -131,6 +138,7 @@ export default function PostsPage() {
       }
 
       setNewPost({});
+      setAddSecondsKnown(true);
       await fetchPosts();
     } catch (err: any) {
       setError(`Could not submit post: ${err.message || "Unknown error"}`);
@@ -185,11 +193,12 @@ export default function PostsPage() {
   const handleDeletePost = async (
     datetime: string,
     username: string,
-    social_name: string
+    social_name: string,
+    seconds_known: boolean
   ) => {
     if (
       !window.confirm(`Are you sure you want to delete the post posted at \
-${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"?`)
+${userTimeFormat(datetime, seconds_known)} by ${social_name} user "${username}"?`)
     ) {
       return;
     }
@@ -228,7 +237,7 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"?`)
         throw new Error(
           errorData.error ||
             `Failed to delete the post posted at \
-${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`
+${userTimeFormat(datetime, seconds_known)} by ${social_name} user "${username}"`
         );
       }
 
@@ -236,7 +245,7 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`
     } catch (err: any) {
       console.error(
         `Failed to delete the post posted at \
-${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
+${userTimeFormat(datetime, seconds_known)} by ${social_name} user "${username}"`,
         err
       );
       setError(`Could not delete post: ${err.message || "Unknown error"}`);
@@ -267,14 +276,20 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
     fetchPosts("?" + query.toString());
   };
 
-  const handleAddRepost  = async(e: React.FormEvent) => {
+  const handleAddRepost = async(e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!viewRepostPost) {
+      setError("No post is selected to repost.");
+      return;
+    }
+
     const body = {
-      post_datetime: sqlFormatNonConverting(viewRepostPost?.datetime),
+      post_datetime: sqlFormat(viewRepostPost?.datetime),
       post_username: viewRepostPost?.username,
       social_name: viewRepostPost?.social_name,
-      repost_datetime: sqlFormatNonConverting(newRepost.repost_datetime),
+      repost_datetime: sqlFormat(newRepost.repost_datetime),
+      repost_seconds_known: repostSecondsKnown,
       repost_username: newRepost.repost_username,
      };
 
@@ -313,6 +328,8 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
        }
 
        setNewRepost({ });
+       setRepostSecondsKnown(true);
+       setViewRepostPost(null);
      } catch (err: any) {
        console.error("Failed to repost post:", err);
        setError(`Could not repost post: ${err.message || "Unknown error"}`);
@@ -320,6 +337,64 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
        await fetchReposts();
        await fetchPosts();
      }
+  };
+  
+  const handleDeleteRepost = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    repost: Repost
+  ) => {
+    e.preventDefault();
+    setDeletingRepost(repost);
+    
+    const body = {
+      post_datetime: sqlFormat(repost.post_datetime),
+      post_username: repost.post_username,
+      social_name: repost.social_name,
+      repost_datetime: sqlFormat(repost.repost_datetime),
+      repost_username: repost.repost_username,
+    };
+    
+    try {
+      const res = await fetch("/api/reposts", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        
+        if (errorData?.details) {
+          const details = errorData.details;
+          let messages: string[] = [];
+
+          // Handle top-level form errors
+          if (Array.isArray(details?._errors) && details._errors.length > 0) {
+            messages.push(...details._errors);
+          }
+      
+          // Handle field-level errors
+          for (const [field, issue] of Object.entries(details)) {
+            if (field === "_errors") continue; // already handled
+            const _i = issue as any;
+            const msg = _i?.["_errors"]?.[0];
+            if (msg) {
+              messages.push(`${field}: ${msg}`);
+            }
+          }
+          throw new Error(messages.join("; ") || "Invalid input.");
+        }
+      
+        throw new Error(errorData.error || "Failed to delete repost.");
+      }
+      setDeletingRepost({ });
+    } catch (err: any) {
+      console.error("Failed to delete repost:", err);
+      setError(`Could not delete repost: ${err.message || "Unknown error"}`);
+    } finally {
+      await fetchReposts();
+      await fetchPosts();
+    }
   };
 
   // Update filtered usernames when platform filter changes
@@ -484,7 +559,7 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                       </Card.Subtitle>
                       <Card.Text>
                         <strong>Time:</strong>{" "}
-                        {new Date(post.datetime).toLocaleString()}
+                        {userTimeFormat(post.datetime, post.seconds_known)}
                         <br />
                         <strong>Location:</strong>{" "}
                         {[post.city, post.region, post.country]
@@ -521,7 +596,8 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                             handleDeletePost(
                               post.datetime,
                               post.username,
-                              post.social_name
+                              post.social_name,
+                              post.seconds_known
                             )
                           }
                           disabled={
@@ -756,12 +832,22 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                 }
               />
             </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Check
+                label="Seconds known"
+                checked={addSecondsKnown}
+                onChange={(e) => 
+                  setAddSecondsKnown(e.target.checked)
+                }
+              />
+            </Form.Group>
 
             <Form.Group className="mb-3">
               <Form.Label>Date/Time Posted</Form.Label>
               <Form.Control
                 type="datetime-local"
-                step="1"
+                step={addSecondsKnown ? 1 : 60}
                 required
                 onChange={(e) =>
                   setNewPost({ ...newPost, datetime: e.target.value })
@@ -878,7 +964,7 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
               <h5>Original Post:</h5>
               <p>{viewRepostPost.text}</p>
               <p>
-                {viewRepostPost.username} - {viewRepostPost.datetime} -{" "}
+                {viewRepostPost.username} - {userTimeFormat(viewRepostPost.datetime, viewRepostPost.seconds_known)} -{" "}
                 {viewRepostPost.city}, {viewRepostPost.region},{" "}
                 {viewRepostPost.country}
               </p>
@@ -899,8 +985,6 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                         }
                         disabled={reposts.length === 0}
                         required
-                        
-                        defaultValue=""
                       >
                         <option disabled value="">Choose user...</option>
                         {users.filter((u)=> u.social_name == viewRepostPost.social_name).map((user) => (
@@ -916,15 +1000,21 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                       <Form.Label>Select Repost Date/Time</Form.Label>
                       <Form.Control
                         type="datetime-local"
-                        value={newRepost.repost_datetime}
+                        step={repostSecondsKnown ? 1 : 60}
                         onChange={(e) =>
-                          setNewRepost({
-                            ...newRepost,
-                            repost_datetime: e.target.value,
-                          })
+                         setNewRepost({ ...newRepost, repost_datetime: e.target.value })
                         }
-                        disabled={reposts.length === 0}
                         required
+                      />
+                    </Form.Group>
+                    
+                    <Form.Group className="mb-3">
+                      <Form.Check
+                        label="Seconds known"
+                        checked={repostSecondsKnown}
+                        onChange={(e) => 
+                          setRepostSecondsKnown(e.target.checked)
+                        }
                       />
                     </Form.Group>
                   </Col>
@@ -940,6 +1030,7 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                   <tr>
                     <th>Username</th>
                     <th>Date</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -950,7 +1041,36 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                     .map((rp) => (
                       <tr key={`${rp.repost_username}|${rp.repost_datetime}`}>
                         <td>{rp.repost_username}</td>
-                        <td>{new Date(rp.repost_datetime).toLocaleString()}</td>
+                        <td>{userTimeFormat(rp.repost_datetime, rp.repost_seconds_known)}</td>
+                        <td>
+                        <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={(e) => handleDeleteRepost(e, rp)}
+                        disabled={
+                          deletingRepost.repost_username === rp.repost_username &&
+                          deletingRepost.repost_datetime === rp.repost_datetime &&
+                          deletingRepost.social_name === rp.social_name
+                        }
+                      >
+                        {deletingRepost.repost_username === rp.repost_username &&
+                          deletingRepost.repost_datetime === rp.repost_datetime &&
+                          deletingRepost.social_name === rp.social_name ? (
+                          <>
+                            <Spinner
+                              as="span"
+                              animation="border"
+                              size="sm"
+                              role="status"
+                              aria-hidden="true"
+                            />{" "}
+                            Deleting...
+                          </>
+                        ) : (
+                          "Delete"
+                        )}
+                      </Button>
+                      </td>
                       </tr>
                     ))}
                 </tbody>

@@ -18,6 +18,7 @@ const postSchema = z.object({
   likes: z.number().int().nonnegative().optional().nullable(),
   dislikes: z.number().int().nonnegative().optional().nullable(),
   has_multimedia: z.coerce.boolean().nullable(),
+  seconds_known: z.coerce.boolean().nullable(),
 });
 
 // Used for deletion and identifying rows
@@ -27,19 +28,17 @@ const postIdentitySchema = z.object({
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
 });
 
-const querySchema = z
-	.object({
-		social_name: z.string().max(100).optional(),
-		username: z.string().max(100).optional(),
-		start: isoDateTime.optional(),   // normalise to `"YYYY-MM-DD HH:MM:SS"`
-		end:   isoDateTime.optional(),
-		first_name: z.string().max(50).optional(),
-		last_name: z.string().max(50).optional(),
-	})
-	.refine(
-		(data) => !(data.start && data.end) || data.start <= data.end,
-		{ message: "`start` date must be before or equal to `end` date", path: ["end"] }
-	);
+const querySchema = z.object({
+  social_name: z.string().max(100).optional(),
+  username: z.string().max(100).optional(),
+  start: isoDateTime.optional(),   // normalise to `"YYYY-MM-DD HH:MM:SS"`
+  end:   isoDateTime.optional(),
+  first_name: z.string().max(50).optional(),
+  last_name: z.string().max(50).optional(),
+}).refine(
+  (data) => !(data.start && data.end) || data.start <= data.end,
+  { message: "`start` date must be before or equal to `end` date", path: ["end"] }
+);
 
 
 // GET all posts w/ optional filters
@@ -82,12 +81,12 @@ export async function GET(request: NextRequest) {
   }
 
   if (start) {
-    query += " AND post.datetime >= ?";
+    query += " AND post.datetime >= CONVERT_TZ(?, '+00:00', 'SYSTEM')";
     params.push(start);
   }
 
   if (end) {
-    query += " AND post.datetime <= ?";
+    query += " AND post.datetime <= CONVERT_TZ(?, '+00:00', 'SYSTEM')";
     params.push(end);
   }
 
@@ -129,8 +128,8 @@ export async function POST(request: NextRequest) {
       parseResult.data;
 
     const query = `
-      INSERT INTO post (datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia)
-      VALUES (CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO post (datetime, username, social_name, text, country, region, city, likes, dislikes, has_multimedia, seconds_known)
+      VALUES (CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const result = await queryDB(query, [
       datetime,
@@ -142,7 +141,8 @@ export async function POST(request: NextRequest) {
       city || null,
       likes || null,
       dislikes || null,
-      has_multimedia
+      has_multimedia,
+      seconds_known,
     ]);
     return NextResponse.json(result);
   } catch (err: any) {
