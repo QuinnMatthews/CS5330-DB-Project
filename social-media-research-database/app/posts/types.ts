@@ -9,6 +9,7 @@ export type Post = {
   likes?: number;
   dislikes?: number;
   has_multimedia: boolean;
+  seconds_known: boolean;
   reposts: number;
 };
 
@@ -17,5 +18,6 @@ export type Repost = {
     post_username: string;
     repost_username: string;
     repost_datetime: string;
+    repost_seconds_known: boolean;
     social_name: string;
 }
