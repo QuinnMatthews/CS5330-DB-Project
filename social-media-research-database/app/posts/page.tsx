@@ -346,6 +346,14 @@ ${userTimeFormat(datetime, seconds_known)} by ${social_name} user "${username}"`
     e.preventDefault();
     setDeletingRepost(repost);
     
+    if (
+      !window.confirm(`Are you sure you want to delete the repost posted at \
+${userTimeFormat(repost.repost_datetime, repost.repost_seconds_known)} \
+by ${repost.social_name} user "${repost.username}"?`)
+    ) {
+      return;
+    }
+
     const body = {
       post_datetime: sqlFormat(repost.post_datetime),
       post_username: repost.post_username,
