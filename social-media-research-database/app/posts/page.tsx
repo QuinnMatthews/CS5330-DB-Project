@@ -77,7 +77,7 @@ export default function PostsPage() {
   const fetchReposts = async () => {
     fetch("/api/reposts")
       .then((res) => res.json())
-      .then((data: Post[]) => setReposts(data))
+      .then((data: Repost[]) => setReposts(data))
       .catch((error) => setError("Failed to load reposts: " + error.message));
   };
 
