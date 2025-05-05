@@ -72,7 +72,7 @@ export async function POST( request: NextRequest, context: { params: Promise<{ p
 
     try {
         const query = `INSERT INTO project_post (project_name, datetime, username, social_name)
-            VALUES (?, ?, ?, ?)`;
+            VALUES (?, CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?)`;
 
         await queryDB(query, [project_name, datetime, username, social_name]);
         return NextResponse.json({ success: true });
@@ -96,7 +96,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
 
     try {
         const query = `DELETE FROM project_post
-            WHERE project_name = ? AND datetime = ? AND username = ? AND social_name = ?`;
+            WHERE project_name = ? AND datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND username = ? AND social_name = ?`;
         await queryDB(query, [project_name, datetime, username, social_name]);
         return NextResponse.json({ success: true });
     } catch (err: any) {
