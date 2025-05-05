@@ -37,11 +37,11 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 
         if (parseResult.data.start_datetime) {
             parameters.push(parseResult.data.start_datetime);
-            query += ` AND post_datetime >=?`;
+            query += ` AND post_datetime >= CONVERT_TZ(?, '+00:00', 'SYSTEM')`;
         }
         if (parseResult.data.end_datetime) {
             parameters.push(parseResult.data.end_datetime);
-            query += ` AND post_datetime <=?`;
+            query += ` AND post_datetime <= CONVERT_TZ(?, '+00:00', 'SYSTEM')`;
         }
 
         const results = await queryDB(query, parameters);
@@ -68,7 +68,7 @@ export async function DELETE(request: NextRequest, context: { params: { project_
     }
 
     try {
-        const query = `DELETE FROM fieldresult WHERE project_name = ? AND field_name = ? AND post_datetime = ? AND post_username = ? AND post_social_name = ?`;
+        const query = `DELETE FROM fieldresult WHERE project_name = ? AND field_name = ? AND post_datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND post_username = ? AND post_social_name = ?`;
         const { project_name, field_name, post_datetime, post_username, post_social_name } = parseResult.data;
         const results = await queryDB(query, [project_name, field_name, post_datetime, post_username, post_social_name]);
         return NextResponse.json(results);
@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest, context: { params: { project_nam
     }
 
     try {
-        const query = `INSERT INTO fieldresult (project_name, field_name, post_datetime, post_username, post_social_name, result) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE result = ?`;
+        const query = `INSERT INTO fieldresult (project_name, field_name, post_datetime, post_username, post_social_name, result) VALUES (?,?,CONVERT_TZ(?, '+00:00', 'SYSTEM'),?,?,?) ON DUPLICATE KEY UPDATE result = ?`;
         const { project_name, field_name, post_datetime, post_username, post_social_name, result } = parseResult.data;
         const results = await queryDB(query, [project_name, field_name, post_datetime, post_username, post_social_name, result, result]);
         return NextResponse.json(results);
