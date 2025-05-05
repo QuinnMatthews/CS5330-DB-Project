@@ -395,11 +395,11 @@ by ${repost.social_name} user "${repost.username}"?`)
       
         throw new Error(errorData.error || "Failed to delete repost.");
       }
-      setDeletingRepost({ });
     } catch (err: any) {
       console.error("Failed to delete repost:", err);
       setError(`Could not delete repost: ${err.message || "Unknown error"}`);
     } finally {
+      setDeletingRepost({ });
       await fetchReposts();
       await fetchPosts();
     }
