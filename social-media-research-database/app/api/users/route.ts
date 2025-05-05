@@ -9,12 +9,12 @@ const isoDate = z.coerce.date({ invalid_type_error: "Invalid date format" }).tra
 const userSchema = z.object({
   username: z.string().min(1, "Username is required").max(100, "Username is too long"),
   social_name: z.string().min(1, "Social platform is required").max(100, "Social platform is too long"),
-  first_name: z.string().max(50, "First name is too long").optional(),
-  last_name: z.string().max(50, "Last name is too long").optional(),
-  birthdate: isoDate.optional(),
-  gender: z.string().max(10, "Gender is too long").optional(),
-  birth_country: z.string().max(50, "Birth country is too long").optional(),
-  residence_country: z.string().max(50, "Residence country is too long").optional(),
+  first_name: z.string().max(50, "First name is too long").optional().nullable(),
+  last_name: z.string().max(50, "Last name is too long").optional().nullable(),
+  birthdate: isoDate.optional().nullable(),
+  gender: z.string().max(10, "Gender is too long").optional().nullable(),
+  birth_country: z.string().max(50, "Birth country is too long").optional().nullable(),
+  residence_country: z.string().max(50, "Residence country is too long").optional().nullable(),
   verified: z.coerce.boolean(),
 });
 
@@ -96,9 +96,9 @@ export async function PATCH(request: NextRequest) {
       gender || null,
       birth_country || null,
       residence_country || null,
+      verified || false,
       username || null,
       social_name || null,
-      verified || false,
     ]);
     return NextResponse.json(result);
   } catch (err: any) {

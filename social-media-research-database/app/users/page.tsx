@@ -98,9 +98,10 @@ export default function UsersPage() {
         throw new Error(errorData.error || `Failed to add user: ${res.status}`);
       }
   
+      const addedUser = { ...newUser };
       setNewUser({});
       await fetchUsers();
-      setEditingUser(newUser);
+      setEditingUser(addedUser);
     } catch (err: any) {
       setError(`Could not add user: ${err.message || "Unknown error"}`);
       console.error("Add user error:", err);
