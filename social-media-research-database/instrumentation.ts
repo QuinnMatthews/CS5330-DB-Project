@@ -92,6 +92,26 @@ export const tables: Record<string, TableDefinition> = {
             ],
         },
     },
+    reposts : {
+        create: `
+            CREATE TABLE repost (
+                repost_datetime DATETIME,
+                repost_username VARCHAR(100),
+                post_datetime DATETIME,
+                post_username VARCHAR(100),
+                social_name VARCHAR(100),
+                PRIMARY KEY (repost_datetime, repost_username, post_datetime, post_username, social_name),
+                FOREIGN KEY (repost_username, social_name) REFERENCES user(username, social_name) ON DELETE CASCADE,
+                FOREIGN KEY (post_datetime, post_username, social_name) REFERENCES post(datetime, username, social_name) ON DELETE CASCADE
+            )
+        `,
+        demoData: {
+            insert: `INSERT INTO repost (repost_datetime, repost_username, post_datetime, post_username, social_name) VALUES (?, ?, ?, ?, ?)`,
+            values: [
+                ['2025-01-25 13:23:00', 'jsmithy315', '2024-12-31 15:00:05+00:00', 'iheartmycat', 'Instagram'],
+            ]
+        }
+    },
     project: {
         create: `
             CREATE TABLE project (
