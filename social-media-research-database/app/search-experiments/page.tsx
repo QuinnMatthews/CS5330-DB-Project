@@ -12,13 +12,13 @@ type Post = {
     datetime: string;
     username: string;
     social_name: string;
-    text: string;
-    city: string;
-    region: string;
-    country: string;
-    likes: number;
-    dislikes: number;
-    has_multimedia: boolean;
+    text: string | null;
+    city: string | null;
+    region: string | null;
+    country: string | null;
+    likes: number | null;
+    dislikes: number | null;
+    has_multimedia: boolean | null;
     field_results: FieldResult[];
 };
 
