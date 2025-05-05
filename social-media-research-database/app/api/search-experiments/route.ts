@@ -45,8 +45,6 @@ export async function GET(req: NextRequest) {
 
     const results = await queryDB(query, [name]);
 
-    console.log("Results:", results);
-
     const posts: {
       datetime: string;
       username: string;
@@ -90,19 +88,25 @@ export async function GET(req: NextRequest) {
 
     const statsQuery = `
       SELECT
-        field_name,
-        COUNT(*) AS total,
-        COUNT(result) AS with_result
-      FROM FieldResult
-      WHERE project_name = ?
-      GROUP BY field_name;
+        fr.field_name,
+        COUNT(DISTINCT CONCAT(fr.post_datetime, '|', fr.post_username, '|', fr.post_social_name)) AS posts_with_field,
+        (SELECT COUNT(DISTINCT CONCAT(p.datetime, '|', p.username, '|', p.social_name))
+        FROM Post p
+        LEFT JOIN FieldResult fr2
+        ON fr2.post_datetime = p.datetime 
+        AND fr2.post_username = p.username 
+        AND fr2.post_social_name = p.social_name
+        WHERE fr2.project_name = ?) AS total_posts
+      FROM FieldResult fr
+      WHERE fr.project_name = ?
+      GROUP BY fr.field_name;
     `;
 
-    const statsResults = await queryDB(statsQuery, [name]);
+    const statsResults = await queryDB(statsQuery, [name, name]);
 
     const field_stats = statsResults.map((stat: any) => ({
       field: stat.field_name,
-      percentage_with_value: (stat.with_result / stat.total) * 100,
+      percentage_with_value: (stat.posts_with_field / stat.total_posts) * 100,
     }));
 
     return NextResponse.json({
