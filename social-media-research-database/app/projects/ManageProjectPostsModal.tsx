@@ -374,7 +374,7 @@ export default function ManageProjectPostsModal({
                     <td>{post.text?.slice(0, 40)}...</td>
 
                     {selectedProject.fields.map((field) => (
-                      <td>{post.field_results?.[field]}</td>
+                      <td key={field}>{post.field_results?.[field]}</td>
                     ))}
 
                     <td>
