@@ -9,4 +9,13 @@ export type Post = {
   likes?: number;
   dislikes?: number;
   has_multimedia: boolean;
+  reposts: number;
 };
+
+export type Repost = {
+    post_datetime: string;
+    post_username: string;
+    repost_username: string;
+    repost_datetime: string;
+    social_name: string;
+}
