@@ -769,10 +769,16 @@ by ${repost.social_name} user "${repost.username}"?`)
             Cancel
           </Button>
           <Button
-            variant="success"
-            onClick={handleUpdatePost}
-            disabled={saving}
-          >
+              variant="success"
+              onClick={() => {
+                if (!editingPost?.text?.trim()) {
+                  alert("Post text cannot be empty.");
+                  return;
+                }
+                handleUpdatePost();
+              }}
+              disabled={saving}
+            >
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </Modal.Footer>

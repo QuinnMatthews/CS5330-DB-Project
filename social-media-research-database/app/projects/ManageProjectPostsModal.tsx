@@ -165,7 +165,7 @@ export default function ManageProjectPostsModal({
   const handleAddPost = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-
+  
     // Validate form inputs
     if (
       !selectedProject ||
@@ -175,9 +175,10 @@ export default function ManageProjectPostsModal({
       !newPost.text
     ) {
       setError("All fields are required.");
+      setSubmitting(false);
       return;
     }
-
+  
     try {
       const postData = {
         ...newPost,
@@ -187,28 +188,28 @@ export default function ManageProjectPostsModal({
         has_multimedia: Boolean(newPost.has_multimedia),
         seconds_known: Boolean(addSecondsKnown),
       };
-
+  
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postData),
       });
-
+  
       if (!res.ok) throw new Error("Failed to create post");
-
+  
       // Immediately associate the new post with the current project
       await handleAssociatePost({
         datetime: newPost.datetime,
         username: newPost.username,
         social_name: newPost.social_name,
       });
-
+  
       setError(null);
       setAddSecondsKnown(true);
 
       await fetchAllPosts();
       await fetchAssociatedPosts(selectedProject.name);
-
+  
       setNewPost({
         datetime: new Date().toISOString().slice(0, 16),
         username: "",
@@ -226,7 +227,7 @@ export default function ManageProjectPostsModal({
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setSubmitting(false);
+      setSubmitting(false); // Always reset the button state
     }
   };
 

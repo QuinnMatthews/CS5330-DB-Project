@@ -93,7 +93,7 @@ export const tables: Record<string, TableDefinition> = {
             ],
         },
     },
-    reposts : {
+    repost : {
         create: `
             CREATE TABLE repost (
                 repost_datetime DATETIME,
