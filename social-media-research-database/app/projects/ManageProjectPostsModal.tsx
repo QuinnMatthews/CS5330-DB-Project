@@ -294,6 +294,8 @@ export default function ManageProjectPostsModal({
       setError((err as Error).message);
       console.error("Failed to unassociate post:", err);
     }
+
+    setSubmitting(false);
   };
 
   const handleUpdatePostFieldResult = async (e: React.FormEvent) => {
