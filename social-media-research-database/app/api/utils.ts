@@ -5,10 +5,10 @@ let connectionParams = GetDBSettings();
 
 export async function queryDB<T = any>(
   query: string,
-  values: any[] = []
+  values: (string | boolean | number| null)[] = []
 ): Promise<T> {
-  let connection: mysql.Connection | null = null;
 
+  let connection: mysql.Connection | null = null;
   try {
     connection = await mysql.createConnection(connectionParams);
     const [results] = await connection.execute(query, values);

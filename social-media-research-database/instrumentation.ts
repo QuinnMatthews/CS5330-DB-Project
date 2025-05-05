@@ -134,6 +134,30 @@ export const tables: Record<string, TableDefinition> = {
             ],
         },
     },
+    project_post: {
+        create: `
+            CREATE TABLE project_post (
+                project_name VARCHAR(100),
+                datetime DATETIME,
+                username VARCHAR(100),
+                social_name VARCHAR(100),
+                PRIMARY KEY (project_name, datetime, username, social_name),
+                FOREIGN KEY (project_name) REFERENCES project(name),
+                FOREIGN KEY (datetime, username, social_name) REFERENCES post(datetime, username, social_name)
+            )
+        `,
+        demoData: {
+            insert: `INSERT INTO project_post (project_name, datetime, username, social_name) VALUES (?,?, ?, ?)`,
+            values: [
+                ['Cat Sentiment Analysis :3', '2024-12-31 16:00:04+00:00', 'iheartmycat', 'Instagram'],
+                ['Cat Sentiment Analysis :3', '2025-05-01 07:15:28', 'linda99', 'LinkedIn'],
+                ['Cat Sentiment Analysis :3', '2015-03-14 09:26:53', 'jdoe2', 'Twitter'],
+                ['Disinformation Analyzer', '2015-03-14 09:26:53', 'jdoe2', 'Twitter'],
+                ['Disinformation Analyzer', '2025-05-01 07:15:28', 'linda99', 'LinkedIn'],
+                
+            ],
+        },
+    },
     fieldResult: {
         create: `
             CREATE TABLE fieldresult (
