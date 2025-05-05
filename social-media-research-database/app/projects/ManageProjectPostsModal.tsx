@@ -21,7 +21,6 @@ type Props = {
   show: boolean;
   onHide: () => void;
   selectedProject: Project | null;
-  onRefresh: () => void;
 };
 
 const sqlFormat = (datetime: string) =>
@@ -33,7 +32,6 @@ export default function ManageProjectPostsModal({
   show,
   onHide,
   selectedProject,
-  onRefresh,
 }: Props) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [associatedPosts, setAssociatedPosts] = useState<any[]>([]);

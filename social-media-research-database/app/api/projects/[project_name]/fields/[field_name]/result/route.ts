@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 
 
     try {
-        var query = `SELECT * FROM fieldresult WHERE project_name = ? AND field_name = ?`;
+        let query = `SELECT * FROM fieldresult WHERE project_name = ? AND field_name = ?`;
         const parameters = [parseResult.data.project_name, parseResult.data.field_name];
 
         if (parseResult.data.start_datetime) {

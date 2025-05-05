@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 export async function POST( request: NextRequest, context: { params: { project_name: string } }
 ) {
     const { project_name } = await context.params;
-    const body = await request.json();``
+    const body = await request.json();
     const result = postKeySchema.safeParse(body);
 
     if (!result.success) {

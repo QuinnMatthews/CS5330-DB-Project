@@ -45,8 +45,8 @@ export default function UsersPage() {
           verified: u.verified,
         }))
       );
-    } catch (err) {
-      setError("Failed to load users.");
+    } catch (err: any) {
+      setError("Failed to load users: " + (err.message || "Unknown error"));
     } finally {
       setLoading(false);
     }

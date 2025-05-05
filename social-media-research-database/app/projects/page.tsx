@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Field, Project } from "./types";
+import { Project } from "./types";
 import {
   Container,
   Row,
