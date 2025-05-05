@@ -139,12 +139,13 @@ export default function ManageProjectPostsModal({
     setLoading(true);
     try {
       const res = await fetch("/api/users");
-      const data = await res.json();
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to fetch users");
       }
+
+      const data = await res.json();
 
       setUsers(data);
     } catch (err: any) {
@@ -250,13 +251,17 @@ export default function ManageProjectPostsModal({
   };
 
   const handleUnassociatePost = async (post: Post) => {
+    setError(null);
+    setSubmitting(true);
+
     if (!selectedProject) {
       console.error("No project selected");
+      setSubmitting(false);
       return;
     }
 
     try {
-      await fetch(`/api/projects/${selectedProject.name}/posts`, {
+      const res = await fetch(`/api/projects/${selectedProject.name}/posts`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -266,9 +271,16 @@ export default function ManageProjectPostsModal({
         }),
       });
 
+      if (!res.ok) 
+      {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to unassociate post");
+      }
+
       await fetchAssociatedPosts(selectedProject.name);
-    } catch (err) {
-      console.error(err);
+    } catch (err : any) {
+      setError((err as Error).message);
+      console.error("Failed to unassociate post:", err);
     }
   };
 
@@ -358,7 +370,7 @@ export default function ManageProjectPostsModal({
                   <th>Text</th>
 
                   {selectedProject.fields.map((field) => (
-                    <th>{field}</th>
+                    <th key={field}>{field}</th>
                   ))}
                   <th>Action</th>
                 </tr>
