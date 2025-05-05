@@ -902,8 +902,9 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
                         disabled={reposts.length === 0}
                         required
                         
+                        defaultValue=""
                       >
-                        <option disabled selected value="">Choose user...</option>
+                        <option disabled value="">Choose user...</option>
                         {users.filter((u)=> u.social_name == viewRepostPost.social_name).map((user) => (
                       <option key={user.username} value={user.username}>
                         {user.username}
