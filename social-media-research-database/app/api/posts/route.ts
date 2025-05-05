@@ -58,8 +58,15 @@ export async function GET(request: NextRequest) {
 
 
   let query = `
-    SELECT post.* FROM post
-    JOIN user ON post.username = user.username AND post.social_name = user.social_name
+    SELECT post.*, COUNT(DISTINCT rp.repost_datetime) AS reposts
+    FROM post
+    JOIN user
+      ON post.username = user.username
+      AND post.social_name = user.social_name
+    LEFT JOIN repost rp
+      ON post.datetime = rp.post_datetime 
+      AND post.username = rp.post_username
+      AND post.social_name = rp.social_name
     WHERE 1=1
   `;
   const params: string[] = [];
@@ -93,6 +100,11 @@ export async function GET(request: NextRequest) {
     query += " AND user.last_name = ?";
     params.push(last_name);
   }
+  
+  query += `
+    GROUP BY post.datetime, post.username, post.social_name
+    ORDER BY post.datetime DESC
+  `;
 
   try {
     const results = await queryDB(query, params);
