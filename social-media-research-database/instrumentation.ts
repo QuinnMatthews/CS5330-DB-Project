@@ -184,7 +184,7 @@ export const tables: Record<string, TableDefinition> = {
             ],
         },
     },
-    fieldResult: {
+    fieldresult: {
         create: `
             CREATE TABLE fieldresult (
                 field_name VARCHAR(100),

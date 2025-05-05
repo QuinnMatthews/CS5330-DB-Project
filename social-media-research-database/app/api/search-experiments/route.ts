@@ -27,12 +27,12 @@ export async function GET(req: NextRequest) {
         fr.field_name,
         fr.result
       FROM project_post pp
-      LEFT JOIN FieldResult fr
+      LEFT JOIN fieldresult fr
         ON fr.project_name = pp.project_name
         AND fr.post_datetime = pp.datetime
         AND fr.post_username = pp.username
         AND fr.post_social_name = pp.social_name
-      LEFT JOIN Post p
+      LEFT JOIN post p
         ON p.datetime = pp.datetime
         AND p.username = pp.username
         AND p.social_name = pp.social_name
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     const fieldsQuery = `
       SELECT name
-      FROM Field
+      FROM field
       WHERE project_name = ?;
     `;
 
@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
           WHERE pp.project_name = ?
         ) AS total_posts
       FROM project_post pp
-      LEFT JOIN FieldResult fr
+      LEFT JOIN fieldresult fr
       ON fr.post_datetime = pp.datetime
       AND fr.post_username = pp.username
       AND fr.post_social_name = pp.social_name

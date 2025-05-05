@@ -1,6 +1,6 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
 
-const nextConfig: NextConfig = {
+module.exports = {
   experimental: {
     optimizePackageImports: ['react-bootstrap'],
   },
@@ -10,5 +10,3 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   }
 };
-
-export default nextConfig;
