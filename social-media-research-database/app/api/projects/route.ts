@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { queryDB } from "@/app/api/utils";
 import { z } from "zod";
 
-export const projectSchema = z.object({
+const projectSchema = z.object({
     name: z
         .string({ required_error: "Project name is required" })
         .min(1, "Project name is required")

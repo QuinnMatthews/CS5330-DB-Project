@@ -120,7 +120,7 @@ export default function PostsPage() {
         body: JSON.stringify({
           ...newPost,
           seconds_known: addSecondsKnown,
-          datetime: sqlFormat(newPost.datetime),
+          datetime: sqlFormat(newPost.datetime || ""),
         }),
       });
 
@@ -159,7 +159,7 @@ export default function PostsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...editingPost,
-          datetime: sqlFormat(editingPost.datetime),
+          datetime: sqlFormat(editingPost.datetime || ""),
         }),
       });
 
@@ -288,7 +288,7 @@ ${userTimeFormat(datetime, seconds_known)} by ${social_name} user "${username}"`
       post_datetime: sqlFormat(viewRepostPost?.datetime),
       post_username: viewRepostPost?.username,
       social_name: viewRepostPost?.social_name,
-      repost_datetime: sqlFormat(newRepost.repost_datetime),
+      repost_datetime: sqlFormat(newRepost.repost_datetime || ""),
       repost_seconds_known: repostSecondsKnown,
       repost_username: newRepost.repost_username,
      };
@@ -349,7 +349,7 @@ ${userTimeFormat(datetime, seconds_known)} by ${social_name} user "${username}"`
     if (
       !window.confirm(`Are you sure you want to delete the repost posted at \
 ${userTimeFormat(repost.repost_datetime, repost.repost_seconds_known)} \
-by ${repost.social_name} user "${repost.username}"?`)
+by ${repost.social_name} user "${repost.repost_username}"?`)
     ) {
       return;
     }

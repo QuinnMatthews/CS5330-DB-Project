@@ -15,7 +15,7 @@ const postKeySchema = z.object({
 });
 
 // GET posts associated with a project
-export async function GET(request: NextRequest, context: { params: { project_name: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ project_name: string }> }) {
     const { project_name } = await context.params;
 
     // Select posts associated with the project
@@ -38,9 +38,11 @@ export async function GET(request: NextRequest, context: { params: { project_nam
             const fieldResultsQuery = `
             SELECT fr.field_name, fr.result
             FROM fieldresult fr
-            WHERE fr.project_name = ? AND fr.post_datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND fr.post_username = ? AND fr.post_social_name = ?;
+            WHERE fr.project_name = ? AND fr.post_datetime = ? AND fr.post_username = ? AND fr.post_social_name = ?;
             `;
             const fieldResults = await queryDB(fieldResultsQuery, [project_name, result.datetime, result.username, result.social_name]);
+
+            console.log("Field Results:", fieldResults);
 
             result.field_results = fieldResults.reduce((acc : any, fr: any) => {
                 acc[fr.field_name] = fr.result;
@@ -56,7 +58,7 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 }
 
 // Associate a post with a project
-export async function POST( request: NextRequest, context: { params: { project_name: string } }
+export async function POST( request: NextRequest, context: { params: Promise<{ project_name: string }> }
 ) {
     const { project_name } = await context.params;
     const body = await request.json();
@@ -70,7 +72,7 @@ export async function POST( request: NextRequest, context: { params: { project_n
 
     try {
         const query = `INSERT INTO project_post (project_name, datetime, username, social_name)
-            VALUES (?, CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?)`;
+            VALUES (?, ?, ?, ?)`;
 
         await queryDB(query, [project_name, datetime, username, social_name]);
         return NextResponse.json({ success: true });
@@ -81,7 +83,7 @@ export async function POST( request: NextRequest, context: { params: { project_n
 }
 
 // Unassociate a post from a project
-export async function DELETE(request: NextRequest, context: { params: { project_name: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ project_name: string }> }) {
     const body = await request.json();
     const result = postKeySchema.safeParse(body);
     const { project_name } = await context.params;
@@ -94,7 +96,7 @@ export async function DELETE(request: NextRequest, context: { params: { project_
 
     try {
         const query = `DELETE FROM project_post
-            WHERE project_name = ? AND datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND username = ? AND social_name = ?`;
+            WHERE project_name = ? AND datetime = ? AND username = ? AND social_name = ?`;
         await queryDB(query, [project_name, datetime, username, social_name]);
         return NextResponse.json({ success: true });
     } catch (err: any) {

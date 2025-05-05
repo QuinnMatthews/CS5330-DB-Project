@@ -2,12 +2,12 @@ import { NextResponse, NextRequest } from "next/server";
 import { queryDB } from "@/app/api/utils";
 import { z } from "zod";
 
-export const fieldSchema = z.object({
+const fieldSchema = z.object({
     field_name: z.string().min(1).max(100),
 });
 
 // POST
-export async function POST(request: NextRequest, context: { params: { project_name: string } }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ project_name: string }> }) {
     const params = await context.params;
     const projectName = params.project_name;
     const body = await request.json();
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, context: { params: { project_na
 }
 
 // DELETE
-export async function DELETE(request: NextRequest, context: { params: { project_name: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ project_name: string }> }) {
     const params = await context.params;
     const projectName = params.project_name;
     const body = await request.json();

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const isoDateTime = z.string().datetime({ local: true }).transform(s => s.replace("T", " "));
 
-export const fieldResultSchema = z.object({
+const fieldResultSchema = z.object({
     project_name: z.string().min(1).max(100),
     field_name: z.string().min(1).max(100),
     post_datetime: isoDateTime,
@@ -13,7 +13,7 @@ export const fieldResultSchema = z.object({
     result: z.string()
 });
 
-export const fieldResultQuerySchema = z.object({
+const fieldResultQuerySchema = z.object({
     project_name: z.string().min(1).max(100),
     field_name: z.string().min(1).max(100),
     start_datetime: isoDateTime,
@@ -21,7 +21,7 @@ export const fieldResultQuerySchema = z.object({
 });
 
 // GET
-export async function GET(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ project_name: string, field_name: string }> }) {
     const params = await context.params;
     const body = await request.json();
     const parseResult = fieldResultQuerySchema.safeParse({ ...body, ...params });
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 }
 
 // DELETE
-export async function DELETE(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ project_name: string, field_name: string }> }) {
     const params = await context.params;
     const body = await request.json();
     const parseResult = fieldResultSchema.safeParse({ ...body, ...params });
@@ -79,7 +79,7 @@ export async function DELETE(request: NextRequest, context: { params: { project_
 }
 
 // PUT
-export async function PUT(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ project_name: string, field_name: string }> }) {
     const params = await context.params;
     const body = await request.json();
     const parseResult = fieldResultSchema.safeParse({ ...body, ...params });
