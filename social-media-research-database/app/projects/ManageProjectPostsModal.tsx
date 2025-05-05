@@ -34,12 +34,12 @@ export default function ManageProjectPostsModal({
   selectedProject,
 }: Props) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [associatedPosts, setAssociatedPosts] = useState<any[]>([]);
+  const [associatedPosts, setAssociatedPosts] = useState<(Post & { field_results?: Record<string, string> })[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFieldResultModal, setUpdateFieldResultModal] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<any>({});
+  const [selectedPost, setSelectedPost] = useState<Post & { field_results?: Record<string, string> }>({} as Post & { field_results?: Record<string, string> });
   const [newPost, setNewPost] = useState<Partial<Post>>({
     datetime: new Date().toISOString().slice(0, 16),
     username: "",
