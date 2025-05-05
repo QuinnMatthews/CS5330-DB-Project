@@ -206,7 +206,6 @@ export default function ProjectsPage() {
           show={showEditPostsModal}
           onHide={() => setShowEditPostsModal(false)}
           selectedProject={selectedProject}
-          onRefresh={fetchProjects}
         />
       </Stack>
     </Container>

@@ -2,19 +2,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Post } from "./types";
+import { Post, Repost } from "./types";
 
 import {
-  Container,
-  Row,
-  Col,
-  Form,
   Button,
-  Table,
-  Spinner,
+  Card,
+  Col,
+  Container,
+  Form,
   Modal,
+  Row,
+  Spinner,
+  Table,
 } from "react-bootstrap";
 import moment from "moment";
+import { Underdog } from "next/font/google";
 
 type User = {
   username: string;
@@ -23,6 +25,7 @@ type User = {
 
 export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [reposts, setReposts] = useState<Repost[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [newPost, setNewPost] = useState<Partial<Post>>({});
   const [platforms, setPlatforms] = useState<string[]>([]);
@@ -37,6 +40,8 @@ export default function PostsPage() {
   const [deletingName, setDeletingName] = useState<string | null>(null);
   const [deletingSocial, setDeletingSocial] = useState<string | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [viewRepostPost, setViewRepostPost] = useState<Post | null>(null);
+  const [newRepost, setNewRepost] = useState<Partial<Repost>>({});
 
   // Filters
   const [filters, setFilters] = useState({
@@ -69,9 +74,17 @@ export default function PostsPage() {
       .catch((error) => setError("Failed to load users: " + error.message));
   };
 
+  const fetchReposts = async () => {
+    fetch("/api/reposts")
+      .then((res) => res.json())
+      .then((data: Post[]) => setReposts(data))
+      .catch((error) => setError("Failed to load reposts: " + error.message));
+  };
+
   useEffect(() => {
     fetchPosts();
     fetchUsers();
+    fetchReposts();
   }, []);
 
   const handlePlatformChange = (platform: string) => {
@@ -85,6 +98,9 @@ export default function PostsPage() {
 
   const sqlFormat = (datetime: string) =>
     moment(datetime).utc().format("YYYY-MM-DDTHH:mm:ss");
+
+  const sqlFormatNonConverting = (datetime: string) =>
+    moment(datetime).format("YYYY-MM-DDTHH:mm:ss");
 
   const handleNewPostSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,6 +267,63 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
     fetchPosts("?" + query.toString());
   };
 
+  const handleAddRepost  = async(e: React.FormEvent) => {
+    e.preventDefault();
+
+    const body = {
+      post_datetime: sqlFormatNonConverting(viewRepostPost?.datetime),
+      post_username: viewRepostPost?.username,
+      social_name: viewRepostPost?.social_name,
+      repost_datetime: sqlFormatNonConverting(newRepost.repost_datetime),
+      repost_username: newRepost.repost_username,
+     };
+
+     try {
+       const res = await fetch("/api/reposts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+       if (!res.ok) {
+         const errorData = await res.json().catch(() => ({}));
+         if (errorData?.details) {
+          
+          const details = errorData.details;
+          let messages: string[] = [];
+          
+          // Handle top-level form errors
+          if (Array.isArray(details?._errors) && details._errors.length > 0) {
+            messages.push(...details._errors);
+          }
+          
+          // Handle field-level errors
+          for (const [field, issue] of Object.entries(details)) {
+            if (field === "_errors") continue; // already handled
+            const _i = issue as any;
+            const msg = _i?.["_errors"]?.[0];
+            if (msg) {
+              messages.push(`${field}: ${msg}`);
+            }
+          }
+          
+          throw new Error(messages.join("; ") || "Invalid input.");
+          }
+         throw new Error(errorData.error || "Failed to repost post.");
+       }
+
+     } catch (err: any) {
+       console.error("Failed to repost post:", err);
+       setError(`Could not repost post: ${err.message || "Unknown error"}`);
+     } finally {
+       setNewRepost({ });
+       await fetchReposts();
+       await fetchPosts();
+     }
+
+    setViewRepostPost(null);
+  };
+
   // Update filtered usernames when platform filter changes
   useEffect(() => {
     const usernames = users
@@ -396,87 +469,92 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
           {posts.length === 0 ? (
             <p>No posts found.</p>
           ) : (
-            <Table bordered hover responsive>
-              <thead className="table-dark">
-                <tr>
-                  <th>Text</th>
-                  <th>Platform</th>
-                  <th>Username</th>
-                  <th>Time</th>
-                  <th>Location</th>
-                  <th>Likes</th>
-                  <th>Dislikes</th>
-                  <th>Multimedia</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {posts.map((post, index) => (
-                  <tr
-                    key={`${post.username}-${post.social_name}-${post.datetime}-${index}`}
-                  >
-                    <td>
-                      {post.text.length > 50
-                        ? `${post.text.slice(0, 50)}...`
-                        : post.text}
-                    </td>
-                    <td>{post.social_name}</td>
-                    <td>{post.username}</td>
-                    <td>{new Date(post.datetime).toLocaleString()}</td>
-                    <td>
-                      {[post.city, post.region, post.country]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </td>
-                    <td>{post.likes ?? 0}</td>
-                    <td>{post.dislikes ?? 0}</td>
-                    <td>{post.has_multimedia ? "✔️" : "❌"}</td>
-                    <td>
+            <Row xs={1} md={2} lg={3} className="g-4">
+              {posts.map((post, index) => (
+                <Col
+                  key={`${post.username}-${post.social_name}-${post.datetime}-${index}`}
+                >
+                  <Card className="h-100">
+                    <Card.Body>
+                      <Card.Title>
+                        {post.text.length > 50
+                          ? `${post.text.slice(0, 50)}...`
+                          : post.text}
+                      </Card.Title>
+                      <Card.Subtitle className="mb-2 text-muted">
+                        {post.social_name} • {post.username}
+                      </Card.Subtitle>
+                      <Card.Text>
+                        <strong>Time:</strong>{" "}
+                        {new Date(post.datetime).toLocaleString()}
+                        <br />
+                        <strong>Location:</strong>{" "}
+                        {[post.city, post.region, post.country]
+                          .filter(Boolean)
+                          .join(", ") || "N/A"}
+                        <br />
+                        <strong>Likes:</strong> {post.likes ?? 0} |{" "}
+                        <strong>Dislikes:</strong> {post.dislikes ?? 0}
+                        <br />
+                        <strong>Multimedia:</strong>{" "}
+                        {post.has_multimedia ? "✔️" : "❌"}
+                      </Card.Text>
+                    </Card.Body>
+                    <Card.Footer className="d-flex justify-content-between">
                       <Button
                         size="sm"
-                        variant="outline-secondary"
-                        onClick={() => setEditingPost({ ...post })}
+                        variant="outline-primary"
+                        onClick={() => setViewRepostPost({ ...post })}
                       >
-                        Edit
+                        Reposts ({post.reposts ?? 0})
                       </Button>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() =>
-                          handleDeletePost(
-                            post.datetime,
-                            post.username,
-                            post.social_name
-                          )
-                        }
-                        disabled={
-                          deletingDate === post.datetime &&
+                      <div className="d-flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline-secondary"
+                          onClick={() => setEditingPost({ ...post })}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() =>
+                            handleDeletePost(
+                              post.datetime,
+                              post.username,
+                              post.social_name
+                            )
+                          }
+                          disabled={
+                            deletingDate === post.datetime &&
+                            deletingName === post.username &&
+                            deletingSocial === post.social_name
+                          }
+                        >
+                          {deletingDate === post.datetime &&
                           deletingName === post.username &&
-                          deletingSocial === post.social_name
-                        }
-                      >
-                        {deletingDate === post.datetime &&
-                        deletingName === post.username &&
-                        deletingSocial === post.social_name ? (
-                          <>
-                            <Spinner
-                              as="span"
-                              animation="border"
-                              size="sm"
-                              role="status"
-                              aria-hidden="true"
-                            />{" "}
-                            Deleting...
-                          </>
-                        ) : (
-                          "Delete"
-                        )}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+                          deletingSocial === post.social_name ? (
+                            <>
+                              <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                              />{" "}
+                              Deleting...
+                            </>
+                          ) : (
+                            "Delete"
+                          )}
+                        </Button>
+                      </div>
+                    </Card.Footer>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
           )}
         </Col>
       </Row>
@@ -786,6 +864,107 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
           </Form>
         </Modal.Body>
       </Modal>
+
+{viewRepostPost && (
+      <Modal
+        show={viewRepostPost != null}
+        onHide={() => setViewRepostPost(null)}
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>View Reposts</Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+          {viewRepostPost && (
+            <>
+              <h5>Original Post:</h5>
+              <p>{viewRepostPost.text}</p>
+              <p>
+                {viewRepostPost.username} - {viewRepostPost.datetime} -{" "}
+                {viewRepostPost.city}, {viewRepostPost.region},{" "}
+                {viewRepostPost.country}
+              </p>
+
+              <h5>Reposts:</h5>
+              <Form onSubmit={handleAddRepost}>
+                <Row>
+                  <Col>
+                    <Form.Group className="mb-3" >
+                      <Form.Label>Select User</Form.Label>
+                      <Form.Select
+                        value={newRepost.repost_username}
+                        onChange={(e) =>
+                          setNewRepost({
+                            ...newRepost,
+                            repost_username: e.target.value,
+                          })
+                        }
+                        disabled={reposts.length === 0}
+                        required
+                        
+                      >
+                        <option disabled selected value="">Choose user...</option>
+                        {users.filter((u)=> u.social_name == viewRepostPost.social_name).map((user) => (
+                      <option key={user.username} value={user.username}>
+                        {user.username}
+                      </option>
+                    ))}
+                    </Form.Select>
+                    </Form.Group>
+                  </Col>
+                  <Col>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Select Repost Date/Time</Form.Label>
+                      <Form.Control
+                        type="datetime-local"
+                        value={newRepost.repost_datetime}
+                        onChange={(e) =>
+                          setNewRepost({
+                            ...newRepost,
+                            repost_datetime: e.target.value,
+                          })
+                        }
+                        disabled={reposts.length === 0}
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Button type="submit" variant="primary">
+                    Add Repost
+                  </Button>
+                </Row>
+              </Form>
+              <Table>
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reposts
+                    .filter((r) => r.post_datetime === viewRepostPost.datetime)
+                    .filter((r) => r.post_username === viewRepostPost.username)
+                    .filter((r) => r.social_name === viewRepostPost.social_name)
+                    .map((rp) => (
+                      <tr key={`${rp.repost_username}|${rp.repost_datetime}`}>
+                        <td>{rp.repost_username}</td>
+                        <td>{new Date(rp.repost_datetime).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </Table>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setViewRepostPost(null)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>)}
     </Container>
   );
 }
