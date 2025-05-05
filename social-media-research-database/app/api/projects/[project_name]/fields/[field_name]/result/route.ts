@@ -21,7 +21,6 @@ export const fieldResultQuerySchema = z.object({
 });
 
 // GET
-
 export async function GET(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
     const params = await context.params;
     const body = await request.json();
@@ -58,27 +57,6 @@ export async function GET(request: NextRequest, context: { params: { project_nam
     }
 }
 
-// POST
-export async function POST(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
-    const params = await context.params;
-    const body = await request.json();
-    const parseResult = fieldResultSchema.safeParse({ ...body, ...params });
-
-    if (!parseResult.success) {
-        return NextResponse.json({ error: "Invalid input", details: parseResult.error.format() }, { status: 400 });
-    }
-
-    try {
-        const query = `INSERT INTO fieldresult (project_name, field_name, post_datetime, post_username, post_social_name, result) VALUES (?,?,?,?,?,?)`;
-        const { project_name, field_name, post_datetime, post_username, post_social_name, result } = parseResult.data;
-        const results = await queryDB(query, [project_name, field_name, post_datetime, post_username, post_social_name, result]);
-        return NextResponse.json(results);
-    } catch (err: any) {
-        console.error("ERROR: API -", err.message);
-        return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-}
-
 // DELETE
 export async function DELETE(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
     const params = await context.params;
@@ -100,8 +78,8 @@ export async function DELETE(request: NextRequest, context: { params: { project_
     }
 }
 
-// PATCH
-export async function PATCH(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
+// PUT
+export async function PUT(request: NextRequest, context: { params: { project_name: string, field_name: string } }) {
     const params = await context.params;
     const body = await request.json();
     const parseResult = fieldResultSchema.safeParse({ ...body, ...params });
@@ -110,9 +88,9 @@ export async function PATCH(request: NextRequest, context: { params: { project_n
     }
 
     try {
-        const query = `UPDATE fieldresult SET result = ? WHERE project_name = ? AND field_name = ? AND post_datetime = ? AND post_username = ? AND post_social_name = ?`;
+        const query = `INSERT INTO fieldresult (project_name, field_name, post_datetime, post_username, post_social_name, result) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE result = ?`;
         const { project_name, field_name, post_datetime, post_username, post_social_name, result } = parseResult.data;
-        const results = await queryDB(query, [result, project_name, field_name, post_datetime, post_username, post_social_name]);
+        const results = await queryDB(query, [project_name, field_name, post_datetime, post_username, post_social_name, result, result]);
         return NextResponse.json(results);
     } catch (err: any) {
         console.error("ERROR: API -", err.message);

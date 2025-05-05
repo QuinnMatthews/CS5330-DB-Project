@@ -18,6 +18,7 @@ const postKeySchema = z.object({
 export async function GET(request: NextRequest, context: { params: { project_name: string } }) {
     const { project_name } = await context.params;
 
+    // Select posts associated with the project
     const query = `
     SELECT p.*
     FROM project_post pp
@@ -27,6 +28,26 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 
     try {
         const results = await queryDB(query, [project_name]);
+
+        if(results.length === 0) {
+            return NextResponse.json(results);
+        }
+
+        for(var result of results) {
+            // select field results for each post
+            const fieldResultsQuery = `
+            SELECT fr.field_name, fr.result
+            FROM fieldresult fr
+            WHERE fr.project_name =? AND fr.post_datetime =? AND fr.post_username =? AND fr.post_social_name =?;
+            `;
+            const fieldResults = await queryDB(fieldResultsQuery, [project_name, result.datetime, result.username, result.social_name]);
+
+            result.field_results = fieldResults.reduce((acc : any, fr: any) => {
+                acc[fr.field_name] = fr.result;
+                return acc;
+            }, {} as Record<string, string>);
+        }
+
         return NextResponse.json(results);
     } catch (err: any) {
         console.error("ERROR: GET /projects/:name/posts -", err.message);
@@ -49,7 +70,7 @@ export async function POST( request: NextRequest, context: { params: { project_n
 
     try {
         const query = `INSERT INTO project_post (project_name, datetime, username, social_name)
-            VALUES (?, CONVERT_TZ(?, '+00:00', 'SYSTEM'), ?, ?)`;
+            VALUES (?, ?, ?, ?)`;
 
         await queryDB(query, [project_name, datetime, username, social_name]);
         return NextResponse.json({ success: true });

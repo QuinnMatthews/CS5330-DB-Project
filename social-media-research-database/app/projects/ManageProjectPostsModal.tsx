@@ -25,7 +25,7 @@ type Props = {
 };
 
 const sqlFormat = (datetime: string) =>
-  moment(datetime).utc().format("YYYY-MM-DDTHH:mm:ss");
+  moment(datetime).format("YYYY-MM-DDTHH:mm:ss");
 const timeFormat = (datetime: string) =>
   moment(datetime).format("YYYY-MM-DD HH:mm:ss");
 
@@ -36,10 +36,12 @@ export default function ManageProjectPostsModal({
   onRefresh,
 }: Props) {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [associatedPosts, setAssociatedPosts] = useState<Post[]>([]);
+  const [associatedPosts, setAssociatedPosts] = useState<any[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showFieldResultModal, setUpdateFieldResultModal] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>({});
   const [newPost, setNewPost] = useState<Partial<Post>>({
     datetime: new Date().toISOString().slice(0, 16),
     username: "",
@@ -56,30 +58,102 @@ export default function ManageProjectPostsModal({
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    fetchPlatforms();
+    fetchUsers();
+    fetchAllPosts();
+
     if (selectedProject) {
-      fetchData();
+      fetchAssociatedPosts(selectedProject.name);
     }
   }, [selectedProject]);
 
-  const fetchData = async () => {
+  const fetchAllPosts = async () => {
+    setLoading(true);
     try {
-      const [allRes, assocRes, socialsRes, usersRes] = await Promise.all([
-        fetch("/api/posts"),
-        fetch(`/api/projects/${selectedProject?.name}/posts`),
-        fetch(`/api/socials`),
-        fetch(`/api/users`),
-      ]);
-      setPosts(await allRes.json());
-      setAssociatedPosts(await assocRes.json());
-      setPlatforms(
-        (await socialsRes.json()).map((s: { name: string }) => s.name)
+      const res = await fetch("/api/posts");
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch posts");
+      }
+
+      const data = await res.json();
+      setPosts(data);
+    } catch (err: any) {
+      console.error("Failed to fetch all posts:", err);
+      setError(
+        "Failed to fetch all posts: " + (err.message || "Unknown error")
       );
-      setUsers(await usersRes.json());
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load posts.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAssociatedPosts = async (projectName: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/projects/${projectName}/posts`);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch posts");
+      }
+
+      const data = await res.json();
+      setAssociatedPosts(data);
+    } catch (err: any) {
+      console.error("Failed to fetch associated posts:", err);
+      setError(
+        "Failed to fetch associated posts: " + (err.message || "Unknown error")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPlatforms = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/socials");
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch platforms");
+      }
+
+      const data = await res.json();
+      setPlatforms(data.map((s: { name: string }) => s.name));
+    } catch (err: any) {
+      console.error("Failed to fetch platforms:", err);
+
+      setError(
+        "Failed to fetch platforms: " + (err.message || "Unknown error")
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to fetch users");
+      }
+
+      setUsers(data);
+    } catch (err: any) {
+      console.error("Failed to fetch users:", err);
+      setError("Failed to fetch users: " + (err.message || "Unknown error"));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,6 +163,7 @@ export default function ManageProjectPostsModal({
 
     // Validate form inputs
     if (
+      !selectedProject ||
       !newPost.username ||
       !newPost.social_name ||
       !newPost.datetime ||
@@ -121,8 +196,11 @@ export default function ManageProjectPostsModal({
         username: newPost.username,
         social_name: newPost.social_name,
       });
-      await fetchData();
+
       setError(null);
+
+      await fetchAllPosts();
+      await fetchAssociatedPosts(selectedProject.name);
 
       setNewPost({
         datetime: new Date().toISOString().slice(0, 16),
@@ -146,13 +224,18 @@ export default function ManageProjectPostsModal({
 
   const handleAssociatePost = async (post: Partial<Post>) => {
     // Validate inputs
-    if (!post.datetime || !post.username || !post.social_name) {
+    if (
+      !selectedProject ||
+      !post.datetime ||
+      !post.username ||
+      !post.social_name
+    ) {
       setError("All fields are required.");
       return;
     }
 
     try {
-      await fetch(`/api/projects/${selectedProject?.name}/posts`, {
+      await fetch(`/api/projects/${selectedProject.name}/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,15 +244,21 @@ export default function ManageProjectPostsModal({
           social_name: post.social_name,
         }),
       });
-      await fetchData();
+
+      await fetchAssociatedPosts(selectedProject.name);
     } catch (err) {
       console.error(err);
     }
   };
 
   const handleUnassociatePost = async (post: Post) => {
+    if (!selectedProject) {
+      console.error("No project selected");
+      return;
+    }
+
     try {
-      await fetch(`/api/projects/${selectedProject?.name}/posts`, {
+      await fetch(`/api/projects/${selectedProject.name}/posts`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -178,10 +267,49 @@ export default function ManageProjectPostsModal({
           social_name: post.social_name,
         }),
       });
-      await fetchData();
+
+      await fetchAssociatedPosts(selectedProject.name);
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const handleUpdatePostFieldResult = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    if (!selectedProject) {
+      console.error("No project selected");
+      return;
+    }
+
+    // Loop through each field and update the result
+    for (const field in selectedPost.field_results) {
+      const fieldValue = selectedPost.field_results[field];
+
+      try {
+        await fetch(
+          `/api/projects/${selectedProject.name}/fields/${field}/result`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              post_datetime: sqlFormat(selectedPost.datetime),
+              post_username: selectedPost.username,
+              post_social_name: selectedPost.social_name,
+              result: fieldValue,
+            }),
+          }
+        );
+        setUpdateFieldResultModal(false);
+      } catch (err) {
+        console.error(err);
+        setError((err as Error).message);
+      }
+    }
+
+    await fetchAssociatedPosts(selectedProject.name);
+    setSubmitting(false);
   };
 
   const isAssociated = (post: Post) =>
@@ -191,6 +319,8 @@ export default function ManageProjectPostsModal({
         p.username === post.username &&
         p.social_name === post.social_name
     );
+
+  if (!selectedProject) return <div>No project selected.</div>;
 
   return (
     <>
@@ -216,39 +346,64 @@ export default function ManageProjectPostsModal({
           </div>
 
           {error && <div className="text-danger">{error}</div>}
+          {loading ? (
+            <div className="d-flex justify-content-center py-5">
+              <Spinner animation="border" role="status" />
+            </div>
+          ) : (
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>Datetime</th>
+                  <th>Username</th>
+                  <th>Platform</th>
+                  <th>Text</th>
 
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Datetime</th>
-                <th>Username</th>
-                <th>Platform</th>
-                <th>Text</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {associatedPosts.map((post) => (
-                <tr
-                  key={`${post.datetime}-${post.username}-${post.social_name}`}
-                >
-                  <td>{timeFormat(post.datetime)}</td>
-                  <td>{post.username}</td>
-                  <td>{post.social_name}</td>
-                  <td>{post.text?.slice(0, 40)}...</td>
-                  <td>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleUnassociatePost(post)}
-                    >
-                      Unassociate
-                    </Button>
-                  </td>
+                  {selectedProject.fields.map((field) => (
+                    <th>{field}</th>
+                  ))}
+                  <th>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {associatedPosts.map((post) => (
+                  <tr
+                    key={`${post.datetime}-${post.username}-${post.social_name}`}
+                  >
+                    <td>{timeFormat(post.datetime)}</td>
+                    <td>{post.username}</td>
+                    <td>{post.social_name}</td>
+                    <td>{post.text?.slice(0, 40)}...</td>
+
+                    {selectedProject.fields.map((field) => (
+                      <td>{post.field_results?.[field]}</td>
+                    ))}
+
+                    <td>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => {
+                          setUpdateFieldResultModal(true);
+                          setSelectedPost(post);
+                        }}
+                        className="m-1"
+                      >
+                        Edit Results
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleUnassociatePost(post)}
+                      >
+                        Unassociate
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
         </Offcanvas.Body>
       </Offcanvas>
 
@@ -485,6 +640,44 @@ export default function ManageProjectPostsModal({
             </Row>
             <Button type="submit" disabled={submitting} className="mt-3">
               {submitting ? "Submitting..." : "Add Post"}
+            </Button>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      <Modal
+        show={showFieldResultModal}
+        onHide={() => {
+          setUpdateFieldResultModal(false);
+        }}
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Update Post Field Results</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleUpdatePostFieldResult}>
+            {/* For each field, display a form group */}
+            {selectedProject.fields.map((field) => (
+              <Form.Group key={field}>
+                <Form.Label>{field}</Form.Label>
+                <Form.Control
+                  type="string"
+                  value={selectedPost.field_results?.[field] || ""}
+                  onChange={(e) => {
+                    setSelectedPost({
+                      ...selectedPost,
+                      field_results: {
+                        ...selectedPost.field_results,
+                        [field]: e.target.value,
+                      },
+                    });
+                  }}
+                />
+              </Form.Group>
+            ))}
+            <Button type="submit" disabled={submitting} className="mt-3">
+              {submitting ? "Submitting..." : "Update Results"}
             </Button>
           </Form>
         </Modal.Body>
