@@ -59,7 +59,7 @@ export async function GET(request: NextRequest, context: { params: { project_nam
 export async function POST( request: NextRequest, context: { params: { project_name: string } }
 ) {
     const { project_name } = await context.params;
-    const body = await request.json();
+    const body = await request.json();``
     const result = postKeySchema.safeParse(body);
 
     if (!result.success) {
@@ -94,7 +94,7 @@ export async function DELETE(request: NextRequest, context: { params: { project_
 
     try {
         const query = `DELETE FROM project_post
-            WHERE project_name = ? AND datetime = CONVERT_TZ(?, '+00:00', 'SYSTEM') AND username = ? AND social_name = ?`;
+            WHERE project_name = ? AND datetime = ? AND username = ? AND social_name = ?`;
         await queryDB(query, [project_name, datetime, username, social_name]);
         return NextResponse.json({ success: true });
     } catch (err: any) {
