@@ -312,16 +312,14 @@ ${new Date(datetime).toLocaleString()} by ${social_name} user "${username}"`,
          throw new Error(errorData.error || "Failed to repost post.");
        }
 
+       setNewRepost({ });
      } catch (err: any) {
        console.error("Failed to repost post:", err);
        setError(`Could not repost post: ${err.message || "Unknown error"}`);
      } finally {
-       setNewRepost({ });
        await fetchReposts();
        await fetchPosts();
      }
-
-    setViewRepostPost(null);
   };
 
   // Update filtered usernames when platform filter changes
