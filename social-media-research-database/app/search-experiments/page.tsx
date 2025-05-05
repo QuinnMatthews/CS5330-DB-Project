@@ -151,7 +151,11 @@ export default function SearchExperimentsPage() {
                                             <td>{new Date(post.datetime).toLocaleString()}</td>
                                             <td>{post.social_name}</td>
                                             <td>{post.username}</td>
-                                            <td>{post.text.length > 50 ? post.text.slice(0, 50) + "..." : post.text}</td>
+                                            <td>
+                                              {post.text && post.text.length > 50
+                                                ? post.text.slice(0, 50) + "..."
+                                                : post.text || ""}
+                                            </td>
                                             <td>{post.city}</td>
                                             <td>{post.region}</td>
                                             <td>{post.country}</td>

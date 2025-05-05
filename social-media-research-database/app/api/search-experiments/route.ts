@@ -23,24 +23,20 @@ export async function GET(req: NextRequest) {
   try {
     const query = `
       SELECT
-        p.text,
-        p.datetime,
-        p.username,
-        p.social_name,
-        p.city,
-        p.region,
-        p.country,
-        p.likes,
-        p.dislikes,
-        p.has_multimedia,
+        p.*,
         fr.field_name,
         fr.result
-      FROM FieldResult fr
+      FROM project_post pp
+      LEFT JOIN FieldResult fr
+        ON fr.project_name = pp.project_name
+        AND fr.post_datetime = pp.datetime
+        AND fr.post_username = pp.username
+        AND fr.post_social_name = pp.social_name
       LEFT JOIN Post p
-        ON fr.post_datetime = p.datetime 
-        AND fr.post_username = p.username 
-        AND fr.post_social_name = p.social_name
-      WHERE fr.project_name = ?;
+        ON p.datetime = pp.datetime
+        AND p.username = pp.username
+        AND p.social_name = pp.social_name
+      WHERE pp.project_name = ?;
     `;
 
     const results = await queryDB(query, [name]);
@@ -96,7 +92,7 @@ export async function GET(req: NextRequest) {
     Object.values(postMap).forEach((post) => {
       // Ensure all fields are included in field_results
       const existingFields = new Set(post.field_results.map((fr) => fr.field_name));
-      allFields.forEach((field) => {
+      allFields.forEach((field: string) => {
         if (!existingFields.has(field)) {
           post.field_results.push({ field_name: field, result: null });
         }
@@ -110,28 +106,25 @@ export async function GET(req: NextRequest) {
       SELECT
         fr.field_name,
         COUNT(DISTINCT CONCAT(fr.post_datetime, '|', fr.post_username, '|', fr.post_social_name)) AS posts_with_field,
-        (SELECT COUNT(DISTINCT CONCAT(p.datetime, '|', p.username, '|', p.social_name))
-        FROM Post p
-        LEFT JOIN FieldResult fr2
-        ON fr2.post_datetime = p.datetime 
-        AND fr2.post_username = p.username 
-        AND fr2.post_social_name = p.social_name
-        WHERE fr2.project_name = ?) AS total_posts
-      FROM FieldResult fr
-      WHERE fr.project_name = ?
+        (SELECT COUNT(*)
+          FROM project_post pp
+          WHERE pp.project_name = ?
+        ) AS total_posts
+      FROM project_post pp
+      LEFT JOIN FieldResult fr
+      ON fr.post_datetime = pp.datetime
+      AND fr.post_username = pp.username
+      AND fr.post_social_name = pp.social_name
+      WHERE pp.project_name =?
       GROUP BY fr.field_name;
     `;
 
     const statsResults = await queryDB(statsQuery, [name, name]);
 
     const totalPostsQuery = `
-      SELECT COUNT(DISTINCT CONCAT(p.datetime, '|', p.username, '|', p.social_name)) AS total_posts
-      FROM Post p
-      LEFT JOIN FieldResult fr
-      ON fr.post_datetime = p.datetime 
-      AND fr.post_username = p.username 
-      AND fr.post_social_name = p.social_name
-      WHERE fr.project_name = ?;
+      SELECT COUNT(*) as total_posts
+          FROM project_post pp
+          WHERE pp.project_name = ?;
     `;
 
     const totalPostsResult = await queryDB(totalPostsQuery, [name]);
@@ -142,7 +135,7 @@ export async function GET(req: NextRequest) {
       fieldStatsMap[stat.field_name] = (stat.posts_with_field / totalPosts) * 100;
     });
 
-    const field_stats = allFields.map((field) => ({
+    const field_stats = allFields.map((field: string) => ({
       field,
       percentage_with_value: fieldStatsMap[field] || 0,
     }));
